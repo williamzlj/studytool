@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>学习辅助工具</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f3f4f6; color: #1f2937; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #2563eb, #059669); color: #fff; padding: 28px 18px 24px; text-align: center; }
+  header h1 { font-size: 22px; }
+  header p { font-size: 13px; opacity: .9; margin-top: 6px; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 18px 14px 40px; }
+  a.tool { display: flex; align-items: center; gap: 14px; background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 18px 16px; margin-top: 14px; text-decoration: none; color: inherit; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  a.tool:active { background: #f0f7ff; }
+  .ico { width: 56px; height: 56px; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; }
+  .ico.blue { background: #2563eb; }
+  .ico.green { background: #059669; }
+  .tool .txt h2 { font-size: 17px; }
+  .tool .txt p { font-size: 13px; color: #6b7280; margin-top: 4px; line-height: 1.5; }
+  .tool .arrow { margin-left: auto; color: #9ca3af; font-size: 20px; flex: none; }
+  .tip { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 24px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 学习辅助工具</h1>
+  <p>错题整理 · 听力复读 · 复习打卡</p>
+</header>
+<div class="wrap">
+  <a class="tool" href="mistake-book.html">
+    <span class="ico blue">📘</span>
+    <span class="txt">
+      <h2>错题订正工具</h2>
+      <p>拍照录入 · 自动纠偏 · 去手写笔迹 · 语音备忘 · 艾宾浩斯复习打卡</p>
+    </span>
+    <span class="arrow">›</span>
+  </a>
+  <a class="tool" href="repeat-player.html">
+    <span class="ico green">🎙</span>
+    <span class="txt">
+      <h2>复读机</h2>
+      <p>录音保存 · 变速复读 · 跟读停顿 · 掐头去尾剪裁</p>
+    </span>
+    <span class="arrow">›</span>
+  </a>
+  <div class="tip">
+    拍照、录音功能需要允许浏览器使用相机和麦克风<br>
+    数据保存在本机浏览器中，清理缓存前请先导出备份
+  </div>
+</div>
+</body>
+</html>

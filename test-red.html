@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>去红笔测试工具</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", sans-serif; background: #f3f4f6; color: #1f2937; padding: 20px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 20px; margin-bottom: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
+  .box { flex: 1; min-width: 300px; background: #fff; padding: 16px; border-radius: 12px; border: 1px solid #e5e7eb; }
+  .box h2 { font-size: 16px; margin-bottom: 10px; }
+  canvas { max-width: 100%; height: auto; display: block; border: 1px solid #e5e7eb; }
+  .ctrl { margin: 12px 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button { padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; }
+  button.on { background: #2563eb; color: #fff; border-color: #2563eb; }
+  input[type="range"] { width: 150px; }
+  label { font-size: 14px; color: #6b7280; }
+  #thresholdVal { font-weight: bold; color: #2563eb; min-width: 30px; }
+  .info { font-size: 13px; color: #6b7280; margin-top: 10px; }
+</style>
+</head>
+<body>
+<h1>🔬 去红笔算法测试工具</h1>
+
+<div class="ctrl">
+  <input type="file" id="fileInput" accept="image/*">
+  <label>红色阈值：<input type="range" id="threshold" min="10" max="40" value="18"><span id="thresholdVal">18</span></label>
+  <button id="btnTest" class="on">处理并对比</button>
+</div>
+
+<div class="row">
+  <div class="box">
+    <h2>原图</h2>
+    <canvas id="cvOrig"></canvas>
+  </div>
+  <div class="box">
+    <h2>处理后（去红笔）</h2>
+    <canvas id="cvResult"></canvas>
+  </div>
+</div>
+
+<div class="info" id="info"></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var origImg = null, origCanvas = null;
+
+  $('fileInput').onchange = function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var img = new Image();
+    img.onload = function () {
+      origImg = img;
+      render();
+    };
+    img.src = URL.createObjectURL(file);
+  };
+
+  $('threshold').oninput = function () {
+    $('thresholdVal').textContent = this.value;
+    if (origImg) render();
+  };
+
+  $('btnTest').onclick = function () {
+    if (!origImg) { alert('请先选择图片'); return; }
+    render();
+  };
+
+  function render() {
+    if (!origImg) return;
+
+    /* 原图 */
+    var c1 = $('cvOrig'), ctx1 = c1.getContext('2d');
+    var w = origImg.width, h = origImg.height;
+    var k = Math.min(1, 800 / Math.max(w, h));
+    c1.width = Math.round(w * k);
+    c1.height = Math.round(h * k);
+    ctx1.drawImage(origImg, 0, 0, c1.width, c1.height);
+
+    /* 处理图 */
+    var c2 = $('cvResult'), ctx2 = c2.getContext('2d');
+    c2.width = c1.width; c2.height = c1.height;
+    ctx2.drawImage(origImg, 0, 0, c2.width, c2.height);
+
+    var d = ctx2.getImageData(0, 0, c2.width, c2.height);
+    var a = d.data;
+    var n = c2.width * c2.height;
+    var threshold = +$('threshold').value;
+    var removed = 0, total = 0;
+
+    for (var i = 0; i < n; i++) {
+      var j = i * 4;
+      var r = a[j], g = a[j + 1], b = a[j + 2];
+      total++;
+      /* 自适应阈值去红 */
+      if (r > g && r > b) {
+        var minDiff = Math.min(r - g, r - b);
+        if ((r > 100 && minDiff > threshold) || (r > 60 && minDiff > threshold + 4) || (r > 40 && minDiff > threshold + 12)) {
+          a[j] = a[j + 1] = a[j + 2] = 255;
+          removed++;
+        }
+      }
+    }
+
+    ctx2.putImageData(d, 0, 0);
+
+    $('info').textContent = '总像素：' + total.toLocaleString() + '，去除像素：' + removed.toLocaleString() + '（' + (removed / total * 100).toFixed(2) + '%）';
+  }
+
+  /* 自动加载测试图 */
+  var testImg = new Image();
+  testImg.onload = function () {
+    origImg = testImg;
+    render();
+  };
+  testImg.src = '图片测试.jpg';
+})();
+</script>
+</body>
+</html>

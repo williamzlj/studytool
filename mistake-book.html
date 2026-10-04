@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>错题订正工具</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f3f4f6; color: #1f2937; }
+  header { background: #2563eb; color: #fff; padding: 14px 16px; font-size: 18px; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+  .view { padding: 14px; max-width: 720px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  .big-btns { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+  button { font-family: inherit; cursor: pointer; border: 1px solid #d1d5db; background: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; }
+  button:hover { background: #dbeafe; }
+  button.big { flex: 1; min-width: 110px; padding: 18px 10px; font-size: 17px; }
+  button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  button.primary:hover { background: #1d4ed8; }
+  button.danger { color: #dc2626; border-color: #fca5a5; }
+  button.on { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .chip { padding: 8px 14px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; font-size: 14px; user-select: none; }
+  .chip:hover { background: #dbeafe; }
+  .chip.on { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .sect { font-weight: bold; margin: 14px 0 2px; font-size: 15px; }
+  textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; font-size: 15px; font-family: inherit; resize: vertical; }
+  /* 首页列表 */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+  .card { background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #e5e7eb; position: relative; }
+  .cardDate { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; padding: 1px 6px; border-radius: 8px; z-index: 2; }
+  .card img { width: 100%; height: 120px; object-fit: cover; display: block; background: #fff; }
+  .card .info { padding: 8px; font-size: 13px; }
+  .badge { display: inline-block; background: #dbeafe; color: #1d4ed8; border-radius: 6px; padding: 1px 6px; font-size: 12px; margin: 2px 2px 0 0; }
+  .card.mastered { opacity: .45; }
+  .empty { text-align: center; color: #9ca3af; padding: 40px 0; font-size: 15px; }
+  /* 学科选择页 */
+  .sub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 12px; }
+  .sub-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px 12px; text-align: center; font-size: 17px; font-weight: bold; position: relative; }
+  .sub-card .num { display: block; font-size: 12px; color: #9ca3af; font-weight: normal; margin-top: 6px; }
+  .sub-card.add { color: #2563eb; border: 1px dashed #93c5fd; font-weight: normal; font-size: 15px; }
+  .sub-card .del-sub { position: absolute; top: 2px; right: 4px; font-size: 13px; color: #dc2626; border: none; background: transparent; padding: 2px 6px; }
+  /* 学科主页 */
+  .home-top { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; }
+  #homeTitle { font-size: 19px; font-weight: bold; }
+  .crumb { display: flex; align-items: center; gap: 8px; background: #eff6ff; color: #1d4ed8; border-radius: 10px; padding: 9px 10px; margin: 8px 0; font-size: 14px; }
+  .crumb .sp { color: #93c5fd; }
+  .crumb .acts { margin-left: auto; display: flex; gap: 6px; }
+  .crumb .acts button { font-size: 12px; padding: 4px 10px; }
+  .folder-head { display: flex; align-items: center; margin: 10px 0 2px; }
+  .folder-head .t { font-weight: bold; font-size: 15px; }
+  .folder-head button { margin-left: auto; font-size: 13px; padding: 6px 12px; }
+  .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 8px; }
+  .folder-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: bold; text-align: left; position: relative; min-height: 64px; }
+  .folder-card .fmeta { display: block; font-size: 12px; color: #9ca3af; font-weight: normal; margin-top: 4px; }
+  .folder-card .facts { position: absolute; right: 6px; bottom: 6px; display: flex; gap: 4px; }
+  .folder-card .facts button { font-size: 11px; padding: 2px 8px; }
+  /* 纠偏页 */
+  #cWrap { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; border-radius: 8px; overflow: hidden; touch-action: none; }
+  #cvC { display: block; max-width: 100%; }
+  #cvO { position: absolute; left: 0; top: 0; }
+  #lens { position: absolute; width: 96px; height: 96px; border-radius: 50%; border: 2px solid #2563eb; overflow: hidden; display: none; pointer-events: none; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.3); z-index: 5; }
+  /* 编辑页 */
+  #canvasWrap { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+  #cv { display: block; max-width: 100%; height: auto; touch-action: none; }
+  #cropBox { position: absolute; border: 2px dashed #ef4444; background: rgba(239,68,68,.12); display: none; pointer-events: none; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; align-items: center; }
+  .hint { font-size: 13px; color: #6b7280; }
+  /* 复习页 */
+  #rvImg { width: 100%; max-height: 34vh; object-fit: contain; border-radius: 10px; background: #fff; border: 1px solid #e5e7eb; }
+  #rvNote { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 8px; margin: 6px 0; font-size: 14px; white-space: pre-wrap; }
+  #rvNote:empty { display: none; }
+  #rvPos { text-align: center; color: #6b7280; font-size: 12px; margin: 4px 0; }
+  /* 复习页紧凑化：一屏截图看全信息 */
+  #reviewView .big-btns { margin: 6px 0; }
+  #reviewView button.big { padding: 10px 8px; font-size: 15px; }
+  #reviewView .sect { margin: 8px 0 0; font-size: 13px; }
+  #reviewView .chips { margin: 4px 0; }
+  #reviewView .chip { padding: 5px 10px; font-size: 12px; }
+  #reviewView .memo-row, #reviewView .hist-row { padding: 5px 8px; margin-top: 5px; font-size: 12px; }
+  #reviewView .memo-row .pb { width: 30px; height: 30px; }
+  #reviewView .hist-row .pb { width: 28px; height: 28px; }
+  #rvTopBar { margin-bottom: 6px; padding: 4px 0; }
+  #rvTopBar button { padding: 7px 0; font-size: 16px; }
+  .memo-row { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px 10px; margin-top: 8px; font-size: 13px; }
+  .memo-row .pb { width: 40px; height: 40px; border-radius: 50%; flex: none; color: #2563eb; border-color: #93c5fd; padding: 0; }
+  .memo-row .del { margin-left: auto; color: #dc2626; border-color: #fca5a5; padding: 6px 10px; font-size: 13px; }
+  .hist-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px 10px; margin-top: 8px; font-size: 13px; }
+  .hist-row .pb { width: 34px; height: 34px; border-radius: 50%; flex: none; color: #2563eb; border-color: #93c5fd; padding: 0; }
+  .due-badge { background: #fee2e2 !important; color: #dc2626 !important; }
+  #toast { position: fixed; left: 50%; bottom: 60px; transform: translateX(-50%); background: rgba(31,41,55,.92); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 14px; display: none; z-index: 99; }
+  /* 复习页顶部图标栏 */
+  #rvTopBar, #edTopBar { display: flex; gap: 6px; margin-bottom: 10px; position: sticky; top: 50px; z-index: 9; background: #f3f4f6; padding: 6px 0; }
+  #rvTopBar button, #edTopBar button { flex: 1; padding: 10px 0; font-size: 18px; border-radius: 10px; line-height: 1; }
+  /* 原图查看 */
+  #origMask { position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 50; overflow: auto; }
+  #origMask .wrap { min-height: 100%; display: flex; align-items: center; justify-content: center; }
+  #origMask img { width: 100%; height: auto; display: block; }
+  #origMask .closeTip { position: fixed; top: 12px; right: 12px; background: rgba(255,255,255,.15); color: #fff; border-radius: 999px; padding: 8px 14px; font-size: 14px; z-index: 51; }
+</style>
+</head>
+<body>
+<header>📘 错题订正工具</header>
+
+<!-- 学科选择页（入口） -->
+<div id="subjectView" class="view">
+  <div class="sect" style="margin-top:2px">选择学科</div>
+  <div id="subjectGrid" class="sub-grid"></div>
+</div>
+
+<!-- 学科主页 -->
+<div id="homeView" class="view hidden">
+  <div class="home-top">
+    <button id="btnSubBack">← 学科</button>
+    <div id="homeTitle"></div>
+  </div>
+  <div class="big-btns">
+    <button id="btnCam" class="big primary">📷 拍照录入</button>
+    <button id="btnGallery" class="big">🖼 相册导入</button>
+  </div>
+  <div id="folderBar"></div>
+  <div class="sect">筛选</div>
+  <div id="filterRow" class="chips"></div>
+  <div id="monthRow" class="chips"></div>
+  <div id="itemList"></div>
+</div>
+
+<!-- 纠偏页 -->
+<div id="correctView" class="view hidden">
+  <div class="hint" style="margin-bottom:8px">照片拍歪了？拖动四个蓝点框住试卷区域，点「应用纠正」自动拉平；拍得不歪就点「跳过」</div>
+  <div id="cWrap">
+    <canvas id="cvC"></canvas>
+    <canvas id="cvO"></canvas>
+    <div id="lens"><canvas id="lensCv" width="96" height="96"></canvas></div>
+  </div>
+  <div class="big-btns">
+    <button id="btnWarp" class="big primary">✔ 应用纠正</button>
+    <button id="btnRotate" class="big">↻ 旋转90°</button>
+    <button id="btnSkipWarp" class="big">跳过</button>
+  </div>
+</div>
+
+<!-- 编辑页 -->
+<div id="editView" class="view hidden">
+  <div id="edTopBar">
+    <button id="edBackTop" title="返回">🔙</button>
+    <button id="edSaveTop" title="保存">💾</button>
+  </div>
+  <div id="canvasWrap"><canvas id="cv"></canvas><div id="cropBox"></div></div>
+  <div class="toolbar">
+    <button id="toolCrop">✂ 裁剪</button>
+    <button id="toolErase">🧽 手动擦除</button>
+    <button id="btnUndo">↩ 撤销擦除</button>
+    <button id="btnClearStroke">清空擦除</button>
+    <button id="btnReCorrect">📐 重新纠偏</button>
+  </div>
+  <div class="toolbar">
+    <span class="hint">效果：</span>
+    <button class="modeBtn" data-m="orig">原图</button>
+    <button class="modeBtn on" data-m="enhance">清晰</button>
+    <button class="modeBtn" data-m="bw">黑白</button>
+    <span class="hint">橡皮：</span>
+    <button class="penBtn" data-p="0">细</button>
+    <button class="penBtn on" data-p="1">粗</button>
+  </div>
+  <div class="toolbar">
+    <span class="hint">自动去手写：</span>
+    <button id="rmRed" class="chip on">去红笔</button>
+    <button id="rmBlue" class="chip">去蓝笔</button>
+    <span class="hint">去铅笔：</span>
+    <button class="pencilBtn chip on" data-g="0">关</button>
+    <button class="pencilBtn chip" data-g="1">弱</button>
+    <button class="pencilBtn chip" data-g="2">强</button>
+  </div>
+  <div class="hint">黑色水笔和印刷体同色，无法自动区分，请用「🧽 手动擦除」涂抹</div>
+  <div id="cropBar" class="toolbar hidden">
+    <button id="btnApplyCrop" class="primary">✔ 应用裁剪</button>
+    <button id="btnCancelCrop">取消</button>
+  </div>
+  <div class="sect">归属文件夹（可后续修改）</div>
+  <div id="folderChips" class="chips"></div>
+  <div class="sect">错误原因（可多选）</div>
+  <div id="reasonChips" class="chips"></div>
+  <div class="sect">备注（可选，点快捷短语即可）</div>
+  <div id="noteQuick" class="chips"></div>
+  <textarea id="noteInput" rows="2" placeholder="也可以简单写一句…"></textarea>
+  <div class="sect">语音备忘（可选，可录多条）</div>
+  <div class="toolbar"><button id="btnMemoRec">🎤 录语音备忘</button></div>
+  <div id="memoList"></div>
+  <div class="big-btns">
+    <button id="btnCancelEdit" class="big">返回</button>
+    <button id="btnSave" class="big primary">✔ 保存</button>
+  </div>
+</div>
+
+<!-- 复习页 -->
+<div id="reviewView" class="view hidden">
+  <div id="rvTopBar">
+    <button id="tbBack" title="返回首页">🏠</button>
+    <button id="tbPrev" title="上一题">←</button>
+    <button id="tbNext" title="下一题">→</button>
+    <button id="tbMaster" title="标记已掌握">✅</button>
+    <button id="tbOrig" title="查看原图">🖼</button>
+    <button id="tbEdit" title="编辑">✏</button>
+    <button id="tbExport" title="导出图片">⬇</button>
+    <button id="tbDel" title="删除" style="color:#dc2626;border-color:#fca5a5">🗑</button>
+  </div>
+  <img id="rvImg" alt="错题图片" title="点开看大图">
+  <div id="rvPos"></div>
+  <div id="rvTags" class="chips"></div>
+  <div id="rvNote"></div>
+  <div id="rvDue" class="hint" style="margin:8px 0; display:flex; justify-content:space-between; gap:8px;">
+    <span id="rvDueText"></span><span id="rvCheckCount"></span>
+  </div>
+  <div class="big-btns">
+    <button id="rvCheckView" class="big">👀 看过打卡</button>
+    <button id="rvCheckVoice" class="big">🎤 语音打卡</button>
+  </div>
+  <div id="rvMemoSect">
+    <div class="sect">语音备忘</div>
+    <div id="rvMemos"></div>
+  </div>
+  <div class="sect">复习记录</div>
+  <div id="rvHistory"></div>
+</div>
+
+<div id="toast"></div>
+<div id="origMask" class="hidden">
+  <span class="closeTip">✕ 点任意处关闭</span>
+  <div class="wrap"><img id="origImg" alt="原始照片"></div>
+</div>
+<input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
+<input type="file" id="fileGallery" accept="image/*" hidden>
+
+<script>
+(function () {
+'use strict';
+var $ = function (id) { return document.getElementById(id); };
+
+var DEFAULT_SUBJECTS = ['语文','数学','英语','物理','化学','生物','政治','历史','地理'];
+var REASONS  = ['粗心大意','知识点不会','概念不清','审题错误','计算错误','书写问题'];
+var QUICK    = ['公式记错','步骤漏写','同类题要再练','已问老师','下次注意审题'];
+var MAXDIM = 1600;
+
+/* 学科列表：默认学科 + 用户自定义（localStorage） */
+function loadSubjects() {
+  try {
+    var a = JSON.parse(localStorage.getItem('mb_subjects') || 'null');
+    if (Array.isArray(a)) return a;
+  } catch (e) {}
+  return DEFAULT_SUBJECTS.slice();
+}
+function saveSubjects(arr) { localStorage.setItem('mb_subjects', JSON.stringify(arr)); }
+
+/* ---------- IndexedDB ---------- */
+var DB = {
+  open: function () {
+    return new Promise(function (res, rej) {
+      var r = indexedDB.open('cuotibook', 2);
+      r.onupgradeneeded = function (e) {
+        var db = e.target.result;
+        if (!db.objectStoreNames.contains('items')) db.createObjectStore('items', { keyPath: 'id', autoIncrement: true });
+        if (!db.objectStoreNames.contains('folders')) db.createObjectStore('folders', { keyPath: 'id', autoIncrement: true });
+      };
+      r.onsuccess = function (e) { res(e.target.result); };
+      r.onerror = function () { rej(r.error); };
+    });
+  },
+  put: function (item) {
+    return DB.open().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction('items', 'readwrite');
+        tx.objectStore('items').put(item);
+        tx.oncomplete = function () { res(item); };
+        tx.onerror = function () { rej(tx.error); };
+      });
+    });
+  },
+  all: function () {
+    return DB.open().then(function (db) {
+      return new Promise(function (res, rej) {
+        var rq = db.transaction('items').objectStore('items').getAll();
+        rq.onsuccess = function () { res(rq.result || []); };
+        rq.onerror = function () { rej(rq.error); };
+      });
+    });
+  },
+  del: function (id) {
+    return DB.open().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction('items', 'readwrite');
+        tx.objectStore('items').delete(id);
+        tx.oncomplete = function () { res(); };
+        tx.onerror = function () { rej(tx.error); };
+      });
+    });
+  },
+  fAll: function () {
+    return DB.open().then(function (db) {
+      return new Promise(function (res, rej) {
+        var rq = db.transaction('folders').objectStore('folders').getAll();
+        rq.onsuccess = function () { res(rq.result || []); };
+        rq.onerror = function () { rej(rq.error); };
+      });
+    });
+  },
+  fPut: function (f) {
+    return DB.open().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction('folders', 'readwrite');
+        var rq = tx.objectStore('folders').put(f);
+        rq.onsuccess = function () { f.id = rq.result; res(f); };
+        tx.onerror = function () { rej(tx.error); };
+      });
+    });
+  },
+  fDel: function (id) {
+    return DB.open().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction('folders', 'readwrite');
+        tx.objectStore('folders').delete(id);
+        tx.oncomplete = function () { res(); };
+        tx.onerror = function () { rej(tx.error); };
+      });
+    });
+  }
+};
+
+/* ---------- 状态 ---------- */
+var items = [];
+var folders = [];
+var curSubject = null;  // 当前学科（'' 表示未分类）
+var curFolder = null;   // 当前文件夹对象；null=学科根层
+var selFolder = null;   // 编辑页选中的文件夹 id
+var filterMonth = 'all';  // 'all' 或 'YYYY-M'
+var onlyUnmastered = false;
+var img = null;          // 编辑用图像 (canvas/bitmap/image)
+var srcFull = null;      // 纠偏页全尺寸 canvas
+var quad = null;         // 纠偏四角（归一化）TL,TR,BR,BL
+var cropRect = null;
+var mode = 'enhance';
+var strokes = [];
+var penWide = 1;
+var tool = 'erase';
+var rmRed = true, rmBlue = false, pencilLv = 0;
+var selReasons = [];
+var editingId = null;
+var rvList = [], rvIdx = 0;
+var editMemos = [];      // 编辑中的语音备忘 [{blob,duration,createdAt}]
+var editFrom = 'home';   // 编辑页来源：home=新录入 / review=复习页进入
+var LADDER = [1, 2, 4, 7, 15]; // 艾宾浩斯复习间隔（天）
+
+var cv = $('cv'), ctx = cv.getContext('2d');
+
+/* ---------- 轻提示 ---------- */
+var toastTimer = null;
+function toast(msg) {
+  var t = $('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.style.display = 'none'; }, 1500);
+}
+
+function fmtTime(ts) {
+  var d = new Date(ts);
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + ' ' +
+         ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+}
+
+/* 下次复习到期时间戳 */
+function nextDue(it) {
+  var rv = it.reviews || [];
+  var last = rv.length ? rv[rv.length - 1].createdAt : it.createdAt;
+  var iv = LADDER[Math.min(rv.length, LADDER.length - 1)];
+  return last + iv * 86400000;
+}
+
+/* ---------- 音频播放（全局同时只播一条） ---------- */
+var curAudio = null, curBtn = null;
+function playBlob(btn, blob) {
+  if (curBtn === btn && curAudio && !curAudio.paused) { curAudio.pause(); btn.textContent = '▶'; return; }
+  stopAudio();
+  var a = new Audio(URL.createObjectURL(blob));
+  curAudio = a; curBtn = btn;
+  btn.textContent = '⏸';
+  a.onended = a.onerror = function () {
+    btn.textContent = '▶';
+    if (curBtn === btn) { curAudio = null; curBtn = null; }
+    URL.revokeObjectURL(a.src);
+  };
+  a.play().catch(function () { btn.textContent = '▶'; });
+}
+function stopAudio() {
+  if (curAudio) { curAudio.pause(); URL.revokeObjectURL(curAudio.src); }
+  if (curBtn) curBtn.textContent = '▶';
+  curAudio = null; curBtn = null;
+}
+
+/* ---------- 语音录制（备忘/打卡共用） ---------- */
+var vrec = { rec: null, stream: null, chunks: [], t0: 0, timer: null, target: null };
+function pickMime() {
+  var cands = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
+  for (var i = 0; i < cands.length; i++) {
+    try { if (MediaRecorder.isTypeSupported(cands[i])) return cands[i]; } catch (e) {}
+  }
+  return '';
+}
+function recBtnEl() { return vrec.target === 'memo' ? $('btnMemoRec') : $('rvCheckVoice'); }
+function resetRecBtn() {
+  $('btnMemoRec').textContent = '🎤 录语音备忘';
+  $('rvCheckVoice').textContent = '🎤 语音打卡';
+}
+function startVoice(target) {
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    alert('当前浏览器不支持录音，请用最新版手机浏览器打开');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function (st) {
+    vrec.stream = st; vrec.chunks = []; vrec.target = target;
+    var mime = pickMime();
+    vrec.rec = mime ? new MediaRecorder(st, { mimeType: mime }) : new MediaRecorder(st);
+    vrec.rec.ondataavailable = function (e) { if (e.data && e.data.size) vrec.chunks.push(e.data); };
+    vrec.rec.onstop = onVoiceSaved;
+    vrec.rec.start();
+    vrec.t0 = Date.now();
+    var btn = recBtnEl();
+    vrec.timer = setInterval(function () {
+      var s = Math.floor((Date.now() - vrec.t0) / 1000);
+      btn.textContent = '⏹ 停止 ' + Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+    }, 300);
+    btn.textContent = '⏹ 停止 0:00';
+  }).catch(function () { alert('无法使用麦克风，请允许麦克风权限'); });
+}
+function stopVoice() {
+  if (!vrec.rec) return;
+  clearInterval(vrec.timer);
+  if (vrec.rec.state !== 'inactive') vrec.rec.stop();
+  if (vrec.stream) vrec.stream.getTracks().forEach(function (t) { t.stop(); });
+}
+function cancelVoice() {
+  if (!vrec.rec) return;
+  vrec.rec.onstop = null;
+  stopVoice();
+  vrec.rec = null;
+  resetRecBtn();
+}
+function onVoiceSaved() {
+  var blob = new Blob(vrec.chunks, { type: (vrec.rec && vrec.rec.mimeType) || 'audio/webm' });
+  var dur = (Date.now() - vrec.t0) / 1000;
+  var target = vrec.target;
+  vrec.rec = null;
+  resetRecBtn();
+  if (target === 'memo') {
+    editMemos.push({ blob: blob, duration: dur, createdAt: Date.now() });
+    renderMemoList();
+    toast('语音备忘已添加');
+  } else if (target === 'checkin') {
+    var it = rvList[rvIdx]; if (!it) return;
+    it.reviews = it.reviews || [];
+    it.reviews.push({ type: 'voice', blob: blob, duration: dur, createdAt: Date.now() });
+    DB.put(it).then(function () { renderReview(); refresh(); toast('语音打卡成功'); });
+  }
+}
+
+/* ---------- 编辑页语音备忘列表 ---------- */
+function renderMemoList() {
+  var box = $('memoList'); box.innerHTML = '';
+  editMemos.forEach(function (m, idx) {
+    var row = document.createElement('div'); row.className = 'memo-row';
+    var pb = document.createElement('button'); pb.className = 'pb'; pb.textContent = '▶';
+    pb.onclick = function () { playBlob(pb, m.blob); };
+    var info = document.createElement('span');
+    info.textContent = '备忘' + (idx + 1) + ' · ' + Math.round(m.duration) + '秒';
+    var del = document.createElement('button'); del.className = 'del'; del.textContent = '删除';
+    del.onclick = function () { stopAudio(); editMemos.splice(idx, 1); renderMemoList(); };
+    row.appendChild(pb); row.appendChild(info); row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+
+/* ---------- 视图切换 ---------- */
+function show(v) {
+  cancelVoice();
+  stopAudio();
+  ['subjectView','homeView','correctView','editView','reviewView'].forEach(function (id) { $(id).classList.add('hidden'); });
+  $(v).classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+/* ---------- 学科选择页 ---------- */
+function subjectStats(name) {
+  var n = 0, un = 0;
+  items.forEach(function (it) {
+    if ((it.subject || '') === name) { n++; if (!it.mastered) un++; }
+  });
+  return { n: n, un: un };
+}
+
+function renderSubjects() {
+  var box = $('subjectGrid'); box.innerHTML = '';
+  var subs = loadSubjects();
+  var customSet = {};
+  subs.forEach(function (s) { customSet[s] = true; });
+
+  function makeCard(name, display, removable) {
+    var c = document.createElement('button');
+    c.className = 'sub-card';
+    var st = subjectStats(name);
+    var t = document.createElement('span'); t.textContent = display; c.appendChild(t);
+    var nm = document.createElement('span'); nm.className = 'num';
+    nm.textContent = st.n + ' 题' + (st.un ? ' · ' + st.un + ' 待复习' : '');
+    c.appendChild(nm);
+    if (removable) {
+      var x = document.createElement('span');
+      x.className = 'del-sub'; x.textContent = '✕'; x.title = '移除学科（不删题）';
+      x.onclick = function (e) {
+        e.stopPropagation();
+        if (!confirm('从列表移除「' + display + '」？该学科的错题不会删除，仍会显示在列表中')) return;
+        var a = loadSubjects().filter(function (s) { return s !== name; });
+        saveSubjects(a); renderSubjects();
+      };
+      c.appendChild(x);
+    }
+    c.onclick = function () { openSubject(name); };
+    box.appendChild(c);
+  }
+
+  subs.forEach(function (s) { makeCard(s, s, customSet[s] && DEFAULT_SUBJECTS.indexOf(s) < 0); });
+
+  /* 有错题但不在学科列表中的（旧数据/已移除自定义学科） */
+  var extras = [];
+  var hasUnfiled = false;
+  items.forEach(function (it) {
+    var s = it.subject || '';
+    if (!s) hasUnfiled = true;
+    else if (!customSet[s] && extras.indexOf(s) < 0) extras.push(s);
+  });
+  extras.forEach(function (s) { makeCard(s, s, false); });
+  if (hasUnfiled) makeCard('', '未分类', false);
+
+  var add = document.createElement('button');
+  add.className = 'sub-card add';
+  add.textContent = '＋ 添加学科';
+  add.onclick = function () {
+    var v = prompt('输入新学科名称，如：科学、信息技术、日语');
+    if (!v) return;
+    v = v.trim();
+    if (!v) return;
+    var all = loadSubjects().concat(extras);
+    if (all.indexOf(v) >= 0) { toast('这个学科已经存在'); return; }
+    var a = loadSubjects(); a.push(v); saveSubjects(a);
+    renderSubjects();
+    toast('已添加「' + v + '」');
+  };
+  box.appendChild(add);
+}
+
+/* ---------- 学科主页 ---------- */
+function openSubject(name) {
+  curSubject = name;
+  curFolder = null;
+  filterMonth = 'all';
+  onlyUnmastered = false;
+  show('homeView');
+  renderHome();
+}
+
+/* 题目是否属于当前学科+文件夹范围 */
+function inScope(it) {
+  if ((it.subject || '') !== curSubject) return false;
+  var fid = it.folderId || null;
+  if (curFolder) return fid === curFolder.id;
+  return !fid;
+}
+
+function foldersOfSubject() {
+  return folders.filter(function (f) { return (f.subject || '') === curSubject; })
+    .sort(function (a, b) { return a.createdAt - b.createdAt; });
+}
+
+function renderFolderBar() {
+  var bar = $('folderBar'); bar.innerHTML = '';
+
+  if (curFolder) {
+    /* 第二层：文件夹内，显示面包屑 */
+    var cr = document.createElement('div'); cr.className = 'crumb';
+    var back = document.createElement('button'); back.textContent = '← ' + (curSubject || '未分类');
+    back.onclick = function () { curFolder = null; filterMonth = 'all'; renderHome(); };
+    cr.appendChild(back);
+    var sp = document.createElement('span'); sp.className = 'sp'; sp.textContent = '/'; cr.appendChild(sp);
+    var nm = document.createElement('b'); nm.textContent = curFolder.name; cr.appendChild(nm);
+    var acts = document.createElement('span'); acts.className = 'acts';
+    var rn = document.createElement('button'); rn.textContent = '✏ 改名';
+    rn.onclick = function () {
+      var v = prompt('文件夹名称', curFolder.name);
+      if (v && v.trim()) { curFolder.name = v.trim(); DB.fPut(curFolder).then(renderHome); }
+    };
+    var dl = document.createElement('button'); dl.className = 'danger'; dl.textContent = '🗑 删除夹';
+    dl.onclick = function () {
+      if (!confirm('删除文件夹「' + curFolder.name + '」？里面的错题不会删除，会移回学科根目录')) return;
+      var fid = curFolder.id;
+      var moved = items.filter(function (it) { return it.folderId === fid; })
+        .map(function (it) { it.folderId = null; return DB.put(it); });
+      Promise.all(moved).then(function () {
+        return DB.fDel(fid);
+      }).then(function () {
+        curFolder = null;
+        return refresh();
+      });
+    };
+    acts.appendChild(rn); acts.appendChild(dl);
+    cr.appendChild(acts);
+    bar.appendChild(cr);
+    return;
+  }
+
+  /* 第一层：学科根，显示文件夹列表 */
+  var fs = foldersOfSubject();
+  var head = document.createElement('div'); head.className = 'folder-head';
+  var t = document.createElement('span'); t.className = 't'; t.textContent = '📁 试卷文件夹'; head.appendChild(t);
+  var add = document.createElement('button'); add.textContent = '＋ 新建文件夹';
+  add.onclick = function () {
+    var v = prompt('文件夹名称，如：2026物理期中考试');
+    if (!v || !v.trim()) return;
+    DB.fPut({ subject: curSubject, name: v.trim(), createdAt: Date.now() }).then(function () {
+      return refresh();
+    });
+  };
+  head.appendChild(add);
+  bar.appendChild(head);
+
+  if (fs.length) {
+    var g = document.createElement('div'); g.className = 'folder-grid';
+    fs.forEach(function (f) {
+      var c = document.createElement('button'); c.className = 'folder-card';
+      var n = items.filter(function (it) { return it.folderId === f.id; }).length;
+      var nm = document.createElement('div'); nm.textContent = '📁 ' + f.name; c.appendChild(nm);
+      var meta = document.createElement('span'); meta.className = 'fmeta'; meta.textContent = n + ' 道错题'; c.appendChild(meta);
+      var facts = document.createElement('span'); facts.className = 'facts';
+      var rn = document.createElement('button'); rn.textContent = '改名';
+      rn.onclick = function (e) {
+        e.stopPropagation();
+        var v = prompt('文件夹名称', f.name);
+        if (v && v.trim()) { f.name = v.trim(); DB.fPut(f).then(renderHome); }
+      };
+      var dl = document.createElement('button'); dl.className = 'danger'; dl.textContent = '删除';
+      dl.onclick = function (e) {
+        e.stopPropagation();
+        if (!confirm('删除文件夹「' + f.name + '」？里面的错题不会删除，会移回学科根目录')) return;
+        var moved = items.filter(function (it) { return it.folderId === f.id; })
+          .map(function (it) { it.folderId = null; return DB.put(it); });
+        Promise.all(moved).then(function () { return DB.fDel(f.id); }).then(refresh);
+      };
+      facts.appendChild(rn); facts.appendChild(dl);
+      c.appendChild(facts);
+      c.onclick = function () { curFolder = f; filterMonth = 'all'; renderHome(); };
+      g.appendChild(c);
+    });
+    bar.appendChild(g);
+  }
+}
+
+/* ---------- 筛选与列表 ---------- */
+function renderFilter() {
+  var row = $('filterRow'); row.innerHTML = '';
+  var um = document.createElement('button');
+  um.className = 'chip' + (onlyUnmastered ? ' on' : '');
+  um.textContent = '只看未掌握';
+  um.onclick = function () { onlyUnmastered = !onlyUnmastered; renderHome(); };
+  row.appendChild(um);
+
+  /* 时间标签：按当前学科+文件夹范围内的创建月份自动生成 */
+  var mrow = $('monthRow'); mrow.innerHTML = '';
+  var months = {};
+  items.forEach(function (it) {
+    if (!inScope(it)) return;
+    var d = new Date(it.createdAt);
+    months[d.getFullYear() + '-' + (d.getMonth() + 1)] = true;
+  });
+  var keys = Object.keys(months).sort().reverse();
+  var allC = document.createElement('button');
+  allC.className = 'chip' + (filterMonth === 'all' ? ' on' : '');
+  allC.textContent = '全部时间';
+  allC.onclick = function () { filterMonth = 'all'; renderHome(); };
+  mrow.appendChild(allC);
+  keys.forEach(function (k) {
+    var p = k.split('-');
+    var c = document.createElement('button');
+    c.className = 'chip' + (filterMonth === k ? ' on' : '');
+    c.textContent = p[0] + '年' + (+p[1]) + '月';
+    c.onclick = function () { filterMonth = k; renderHome(); };
+    mrow.appendChild(c);
+  });
+}
+
+function monthKey(t) {
+  var d = new Date(t);
+  return d.getFullYear() + '-' + (d.getMonth() + 1);
+}
+
+function filtered() {
+  return items.filter(function (it) {
+    if (!inScope(it)) return false;
+    if (onlyUnmastered && it.mastered) return false;
+    if (filterMonth !== 'all' && monthKey(it.createdAt) !== filterMonth) return false;
+    return true;
+  }).sort(function (a, b) { return b.createdAt - a.createdAt; });
+}
+
+function renderHome() {
+  if (curSubject === null) { show('subjectView'); renderSubjects(); return; }
+  $('homeTitle').textContent = (curFolder ? '📁 ' : '') + (curSubject || '未分类') + (curFolder ? ' / ' + curFolder.name : '');
+  renderFolderBar();
+  renderFilter();
+  var list = filtered();
+  var box = $('itemList'); box.innerHTML = '';
+  if (!list.length) {
+    box.innerHTML = '<div class="empty">' +
+      (curFolder ? '这个文件夹里还没有错题，点上方拍照录入' : '还没有错题，点上方「拍照录入」开始吧') +
+      '</div>';
+    return;
+  }
+  var grid = document.createElement('div'); grid.className = 'grid';
+  list.forEach(function (it) {
+    var card = document.createElement('div');
+    card.className = 'card' + (it.mastered ? ' mastered' : '');
+    var dateLine = document.createElement('div');
+    dateLine.className = 'cardDate';
+    var d = new Date(it.createdAt);
+    dateLine.textContent = (d.getMonth() + 1) + '/' + d.getDate();
+    card.appendChild(dateLine);
+    var im = document.createElement('img'); im.src = it.image; card.appendChild(im);
+    var info = document.createElement('div'); info.className = 'info';
+    var html = '';
+    (it.reasons || []).slice(0, 2).forEach(function (r) { html += '<span class="badge">' + r + '</span>'; });
+    if (it.mastered) html += '<span class="badge">已掌握</span>';
+    else if (Date.now() >= nextDue(it)) html += '<span class="badge due-badge">该复习了</span>';
+    info.innerHTML = html;
+    card.appendChild(info);
+    card.onclick = function () { openReview(it.id); };
+    grid.appendChild(card);
+  });
+  box.appendChild(grid);
+}
+
+function refresh() {
+  return Promise.all([DB.all(), DB.fAll()]).then(function (r) {
+    items = r[0]; folders = r[1];
+    if (!$('subjectView').classList.contains('hidden')) renderSubjects();
+    else renderHome();
+  });
+}
+
+$('btnSubBack').onclick = function () {
+  curSubject = null; curFolder = null;
+  show('subjectView'); renderSubjects();
+};
+
+/* ---------- 纠偏（四点透视变换） ---------- */
+var cvC = $('cvC'), cCtx = cvC.getContext('2d');
+var cvO = $('cvO'), oCtx = cvO.getContext('2d');
+var lens = $('lens'), lensCv = $('lensCv'), lensCtx = lensCv.getContext('2d');
+var dispW = 0, dispH = 0, dragIdx = -1;
+
+function openCorrect() {
+  show('correctView');
+  // 默认四角稍微内缩
+  quad = [
+    { x: 0.04, y: 0.04 }, { x: 0.96, y: 0.04 },
+    { x: 0.96, y: 0.96 }, { x: 0.04, y: 0.96 }
+  ];
+  layoutCorrect();
+}
+
+function layoutCorrect() {
+  var maxW = Math.min(window.innerWidth - 28, 720);
+  var maxH = Math.round(window.innerHeight * 0.6);
+  var k = Math.min(maxW / srcFull.width, maxH / srcFull.height, 1);
+  dispW = Math.round(srcFull.width * k);
+  dispH = Math.round(srcFull.height * k);
+  cvC.width = dispW; cvC.height = dispH;
+  cvO.width = dispW; cvO.height = dispH;
+  cCtx.drawImage(srcFull, 0, 0, dispW, dispH);
+  drawQuad();
+}
+
+function drawQuad() {
+  oCtx.clearRect(0, 0, dispW, dispH);
+  if (!quad) return;
+  oCtx.beginPath();
+  quad.forEach(function (p, i) {
+    var x = p.x * dispW, y = p.y * dispH;
+    if (i) oCtx.lineTo(x, y); else oCtx.moveTo(x, y);
+  });
+  oCtx.closePath();
+  oCtx.fillStyle = 'rgba(37,99,235,.08)';
+  oCtx.fill();
+  oCtx.strokeStyle = '#2563eb';
+  oCtx.lineWidth = 2;
+  oCtx.stroke();
+  quad.forEach(function (p) {
+    var x = p.x * dispW, y = p.y * dispH;
+    oCtx.beginPath();
+    oCtx.arc(x, y, 13, 0, Math.PI * 2);
+    oCtx.fillStyle = '#fff';
+    oCtx.fill();
+    oCtx.strokeStyle = '#2563eb';
+    oCtx.lineWidth = 3;
+    oCtx.stroke();
+  });
+}
+
+function oPos(e) {
+  var r = cvO.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+cvO.addEventListener('pointerdown', function (e) {
+  e.preventDefault();
+  cvO.setPointerCapture(e.pointerId);
+  var p = oPos(e);
+  dragIdx = -1;
+  var best = 40;
+  quad.forEach(function (q, i) {
+    var dx = q.x * dispW - p.x, dy = q.y * dispH - p.y;
+    var d = Math.sqrt(dx * dx + dy * dy);
+    if (d < best) { best = d; dragIdx = i; }
+  });
+  if (dragIdx >= 0) { moveCorner(p); }
+});
+
+cvO.addEventListener('pointermove', function (e) {
+  if (dragIdx < 0) return;
+  e.preventDefault();
+  moveCorner(oPos(e));
+});
+
+cvO.addEventListener('pointerup', function () {
+  dragIdx = -1;
+  lens.style.display = 'none';
+});
+
+function moveCorner(p) {
+  quad[dragIdx] = {
+    x: Math.min(1, Math.max(0, p.x / dispW)),
+    y: Math.min(1, Math.max(0, p.y / dispH))
+  };
+  drawQuad();
+  drawLens(p);
+}
+
+function drawLens(p) {
+  var S = 24; // 源区域边长（显示像素）
+  lens.style.display = 'block';
+  var lx = p.x - 48, ly = p.y - 150;
+  lx = Math.min(dispW - 96, Math.max(0, lx));
+  ly = Math.max(0, ly);
+  lens.style.left = lx + 'px';
+  lens.style.top = ly + 'px';
+  lensCtx.imageSmoothingEnabled = true;
+  lensCtx.clearRect(0, 0, 96, 96);
+  lensCtx.drawImage(cvC, p.x - S / 2, p.y - S / 2, S, S, 0, 0, 96, 96);
+  lensCtx.strokeStyle = 'rgba(220,38,38,.8)';
+  lensCtx.lineWidth = 1;
+  lensCtx.beginPath();
+  lensCtx.moveTo(48, 0); lensCtx.lineTo(48, 96);
+  lensCtx.moveTo(0, 48); lensCtx.lineTo(96, 48);
+  lensCtx.stroke();
+}
+
+function dist(a, b) { var dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx * dx + dy * dy); }
+
+/* 解 8 未知数线性方程组（高斯消元，部分主元） */
+function solve8(A, b) {
+  var n = 8, i, j, k;
+  var M = [];
+  for (i = 0; i < n; i++) { M[i] = A[i].slice(); M[i].push(b[i]); }
+  for (i = 0; i < n; i++) {
+    var mx = i;
+    for (j = i + 1; j < n; j++) if (Math.abs(M[j][i]) > Math.abs(M[mx][i])) mx = j;
+    var t = M[i]; M[i] = M[mx]; M[mx] = t;
+    if (Math.abs(M[i][i]) < 1e-12) return null;
+    for (j = i + 1; j < n; j++) {
+      var f = M[j][i] / M[i][i];
+      for (k = i; k <= n; k++) M[j][k] -= f * M[i][k];
+    }
+  }
+  var x = new Array(n).fill(0);
+  for (i = n - 1; i >= 0; i--) {
+    var s = M[i][n];
+    for (j = i + 1; j < n; j++) s -= M[i][j] * x[j];
+    x[i] = s / M[i][i];
+  }
+  return x;
+}
+
+/* dst 矩形 → src 四点 的单应矩阵（用于反向映射） */
+function homography(dst, src) {
+  var A = [], b = [];
+  for (var i = 0; i < 4; i++) {
+    var x = dst[i].x, y = dst[i].y, X = src[i].x, Y = src[i].y;
+    A.push([x, y, 1, 0, 0, 0, -x * X, -y * X]); b.push(X);
+    A.push([0, 0, 0, x, y, 1, -x * Y, -y * Y]); b.push(Y);
+  }
+  var h = solve8(A, b);
+  if (!h) return null;
+  return { a: h[0], b: h[1], c: h[2], d: h[3], e: h[4], f: h[5], g: h[6], h: h[7] };
+}
+
+function warpQuad() {
+  var iw = srcFull.width, ih = srcFull.height;
+  var pts = quad.map(function (p) { return { x: p.x * iw, y: p.y * ih }; });
+  var w = Math.round(Math.max(dist(pts[0], pts[1]), dist(pts[3], pts[2])));
+  var h = Math.round(Math.max(dist(pts[0], pts[3]), dist(pts[1], pts[2])));
+  if (w < 50 || h < 50) { alert('框选区域太小，请重新拖动四角'); return; }
+  var k = Math.min(1, 2000 / Math.max(w, h));
+  w = Math.round(w * k); h = Math.round(h * k);
+  var dst = [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }];
+  var H = homography(dst, pts);
+  if (!H) { alert('四点位置不合理，请重试'); return; }
+  var sCtx = srcFull.getContext('2d');
+  var sData = sCtx.getImageData(0, 0, iw, ih).data;
+  var out = document.createElement('canvas');
+  out.width = w; out.height = h;
+  var oCtx2 = out.getContext('2d');
+  var oImg = oCtx2.createImageData(w, h);
+  var od = oImg.data;
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      var den = H.g * x + H.h * y + 1;
+      var sx = (H.a * x + H.b * y + H.c) / den;
+      var sy = (H.d * x + H.e * y + H.f) / den;
+      var di = (y * w + x) * 4;
+      if (sx < 0 || sy < 0 || sx >= iw - 1 || sy >= ih - 1) {
+        od[di] = od[di + 1] = od[di + 2] = 255; od[di + 3] = 255;
+        continue;
+      }
+      var x0 = Math.floor(sx), y0 = Math.floor(sy);
+      var fx = sx - x0, fy = sy - y0;
+      var i00 = (y0 * iw + x0) * 4, i10 = i00 + 4, i01 = i00 + iw * 4, i11 = i01 + 4;
+      for (var cch = 0; cch < 3; cch++) {
+        var v0 = sData[i00 + cch] * (1 - fx) + sData[i10 + cch] * fx;
+        var v1 = sData[i01 + cch] * (1 - fx) + sData[i11 + cch] * fx;
+        od[di + cch] = v0 * (1 - fy) + v1 * fy;
+      }
+      od[di + 3] = 255;
+    }
+  }
+  oCtx2.putImageData(oImg, 0, 0);
+  img = out;
+  cropRect = null; strokes = [];
+  openEdit();
+}
+
+$('btnWarp').onclick = warpQuad;
+$('btnSkipWarp').onclick = function () { img = srcFull; cropRect = null; strokes = []; openEdit(); };
+$('btnRotate').onclick = function () {
+  var w = srcFull.width, h = srcFull.height;
+  var nc = document.createElement('canvas');
+  nc.width = h; nc.height = w;
+  var c = nc.getContext('2d');
+  c.translate(h, 0);
+  c.rotate(Math.PI / 2);
+  c.drawImage(srcFull, 0, 0);
+  srcFull = nc;
+  layoutCorrect();
+};
+
+/* ---------- 编辑：渲染管线 ---------- */
+function render() {
+  if (!img) return;
+  var iw = img.width, ih = img.height;
+  var cr = cropRect || { x: 0, y: 0, w: 1, h: 1 };
+  var sx = Math.round(cr.x * iw), sy = Math.round(cr.y * ih);
+  var sw = Math.max(1, Math.round(cr.w * iw)), sh = Math.max(1, Math.round(cr.h * ih));
+  var k = Math.min(1, MAXDIM / Math.max(sw, sh));
+  var w = Math.max(1, Math.round(sw * k)), h = Math.max(1, Math.round(sh * k));
+  cv.width = w; cv.height = h;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+  var d = ctx.getImageData(0, 0, w, h);
+  processImg(d, w, h);
+  ctx.putImageData(d, 0, 0);
+  ctx.strokeStyle = '#fff'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  strokes.forEach(function (s) {
+    ctx.lineWidth = s.w;
+    ctx.beginPath();
+    s.pts.forEach(function (p, i) { if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); });
+    if (s.pts.length === 1) ctx.lineTo(s.pts[0][0] + 0.01, s.pts[0][1]);
+    ctx.stroke();
+  });
+}
+
+function processImg(d, w, h) {
+  var a = d.data;
+  var n = w * h, i, j;
+  /* 第一步：颜色通道去彩色笔迹（印刷是黑色墨粉，不受影响） */
+  if (rmRed || rmBlue) {
+    for (i = 0; i < n; i++) {
+      j = i * 4;
+      var r = a[j], g = a[j + 1], b = a[j + 2];
+      if (rmRed && r > g && r > b) {
+        var minDiff = Math.min(r - g, r - b);
+        /* 自适应阈值：亮红允许较小差值，暗红要求更大差值避免误判黑墨 */
+        if ((r > 100 && minDiff > 18) || (r > 60 && minDiff > 22) || (r > 40 && minDiff > 30)) {
+          a[j] = a[j + 1] = a[j + 2] = 255; continue;
+        }
+      }
+      if (rmBlue && b > r && b > g) {
+        var minDiffB = Math.min(b - r, b - g);
+        if ((b > 90 && minDiffB > 14) || (b > 50 && minDiffB > 20)) {
+          a[j] = a[j + 1] = a[j + 2] = 255;
+        }
+      }
+    }
+  }
+  /* 灰度化 */
+  var gray = new Float32Array(n);
+  for (i = 0; i < n; i++) { j = i * 4; gray[i] = 0.299 * a[j] + 0.587 * a[j + 1] + 0.114 * a[j + 2]; }
+  /* 铅笔白点截断：浅灰内容拉成纯白（铅笔灰度介于印刷黑和纸白之间） */
+  var cut = pencilLv === 1 ? 205 : (pencilLv === 2 ? 180 : 0);
+  if (mode === 'orig') {
+    if (cut > 0) {
+      for (i = 0; i < n; i++) {
+        if (gray[i] > cut) { j = i * 4; a[j] = a[j + 1] = a[j + 2] = 255; }
+      }
+    }
+    return;
+  }
+  if (mode === 'enhance') {
+    var hist = new Uint32Array(256);
+    for (i = 0; i < n; i++) hist[gray[i] | 0]++;
+    var lo = 0, hi = 255, acc = 0, lth = n * 0.02, hth = n * 0.98;
+    for (i = 0; i < 256; i++) { acc += hist[i]; if (acc >= lth) { lo = i; break; } }
+    acc = 0;
+    for (i = 0; i < 256; i++) { acc += hist[i]; if (acc >= hth) { hi = i; break; } }
+    var rng = Math.max(20, hi - lo);
+    for (i = 0; i < n; i++) {
+      var g2 = (gray[i] - lo) * 255 / rng;
+      g2 = g2 < 0 ? 0 : (g2 > 255 ? 255 : g2);
+      if (cut > 0 && g2 > cut) g2 = 255;
+      j = i * 4; a[j] = a[j + 1] = a[j + 2] = g2;
+    }
+  } else { // bw 自适应阈值（黑白模式本身就会去掉浅灰铅笔）
+    var W = w + 1;
+    var integ = new Float64Array(W * (h + 1));
+    var x, y, row;
+    for (y = 0; y < h; y++) {
+      row = 0;
+      for (x = 0; x < w; x++) {
+        row += gray[y * w + x];
+        integ[(y + 1) * W + x + 1] = integ[y * W + x + 1] + row;
+      }
+    }
+    var win = Math.max(16, Math.round(Math.min(w, h) / 16)), C = pencilLv === 2 ? 20 : 12;
+    for (y = 0; y < h; y++) {
+      var y0 = Math.max(0, y - win), y1 = Math.min(h - 1, y + win);
+      for (x = 0; x < w; x++) {
+        var x0 = Math.max(0, x - win), x1 = Math.min(w - 1, x + win);
+        var sum = integ[(y1 + 1) * W + x1 + 1] - integ[y0 * W + x1 + 1] - integ[(y1 + 1) * W + x0] + integ[y0 * W + x0];
+        var mean = sum / ((y1 - y0 + 1) * (x1 - x0 + 1));
+        var g3 = gray[y * w + x] > mean - C ? 255 : 0;
+        j = (y * w + x) * 4; a[j] = a[j + 1] = a[j + 2] = g3;
+      }
+    }
+  }
+}
+
+/* ---------- 编辑交互（裁剪/擦除） ---------- */
+var drawing = false, curStroke = null;
+var cropStart = null, cropSel = null;
+var cropBox = $('cropBox');
+
+function evPos(e) {
+  var r = cv.getBoundingClientRect();
+  return {
+    fx: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
+    fy: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))
+  };
+}
+
+cv.addEventListener('pointerdown', function (e) {
+  if (!img) return;
+  e.preventDefault();
+  cv.setPointerCapture(e.pointerId);
+  var p = evPos(e);
+  if (tool === 'erase') {
+    drawing = true;
+    var wpx = (penWide ? cv.width / 18 : cv.width / 50);
+    curStroke = { pts: [[p.fx * cv.width, p.fy * cv.height]], w: wpx };
+    strokes.push(curStroke);
+    render();
+  } else {
+    cropStart = p; cropSel = null;
+  }
+});
+
+cv.addEventListener('pointermove', function (e) {
+  var p = evPos(e);
+  if (tool === 'erase' && drawing && curStroke) {
+    e.preventDefault();
+    curStroke.pts.push([p.fx * cv.width, p.fy * cv.height]);
+    render();
+  } else if (tool === 'crop' && cropStart) {
+    e.preventDefault();
+    cropSel = {
+      x0: Math.min(cropStart.fx, p.fx), y0: Math.min(cropStart.fy, p.fy),
+      x1: Math.max(cropStart.fx, p.fx), y1: Math.max(cropStart.fy, p.fy)
+    };
+    var r = cv.getBoundingClientRect();
+    cropBox.style.display = 'block';
+    cropBox.style.left = cropSel.x0 * r.width + 'px';
+    cropBox.style.top = cropSel.y0 * r.height + 'px';
+    cropBox.style.width = (cropSel.x1 - cropSel.x0) * r.width + 'px';
+    cropBox.style.height = (cropSel.y1 - cropSel.y0) * r.height + 'px';
+  }
+});
+
+cv.addEventListener('pointerup', function () {
+  if (tool === 'erase') { drawing = false; curStroke = null; }
+  else if (cropStart) {
+    cropStart = null;
+    if (cropSel && (cropSel.x1 - cropSel.x0) > 0.02 && (cropSel.y1 - cropSel.y0) > 0.02) {
+      $('cropBar').classList.remove('hidden');
+    } else {
+      cropSel = null; cropBox.style.display = 'none';
+    }
+  }
+});
+
+function setTool(t) {
+  tool = t;
+  $('toolCrop').classList.toggle('on', t === 'crop');
+  $('toolErase').classList.toggle('on', t === 'erase');
+  if (t !== 'crop') { cropSel = null; cropBox.style.display = 'none'; $('cropBar').classList.add('hidden'); }
+}
+
+$('toolCrop').onclick = function () { setTool('crop'); };
+$('toolErase').onclick = function () { setTool('erase'); };
+$('btnUndo').onclick = function () { strokes.pop(); render(); };
+$('btnClearStroke').onclick = function () { strokes = []; render(); };
+$('btnReCorrect').onclick = function () { if (srcFull) openCorrect(); };
+
+Array.prototype.forEach.call(document.querySelectorAll('.modeBtn'), function (b) {
+  b.onclick = function () {
+    mode = b.dataset.m;
+    Array.prototype.forEach.call(document.querySelectorAll('.modeBtn'), function (x) { x.classList.toggle('on', x === b); });
+    render();
+  };
+});
+Array.prototype.forEach.call(document.querySelectorAll('.penBtn'), function (b) {
+  b.onclick = function () {
+    penWide = +b.dataset.p;
+    Array.prototype.forEach.call(document.querySelectorAll('.penBtn'), function (x) { x.classList.toggle('on', x === b); });
+  };
+});
+
+/* 自动去手写开关 */
+$('rmRed').onclick = function () { rmRed = !rmRed; $('rmRed').classList.toggle('on', rmRed); render(); };
+$('rmBlue').onclick = function () { rmBlue = !rmBlue; $('rmBlue').classList.toggle('on', rmBlue); render(); };
+Array.prototype.forEach.call(document.querySelectorAll('.pencilBtn'), function (b) {
+  b.onclick = function () {
+    pencilLv = +b.dataset.g;
+    Array.prototype.forEach.call(document.querySelectorAll('.pencilBtn'), function (x) { x.classList.toggle('on', x === b); });
+    render();
+  };
+});
+
+$('btnApplyCrop').onclick = function () {
+  if (!cropSel) return;
+  var cr = cropRect || { x: 0, y: 0, w: 1, h: 1 };
+  cropRect = {
+    x: cr.x + cropSel.x0 * cr.w,
+    y: cr.y + cropSel.y0 * cr.h,
+    w: (cropSel.x1 - cropSel.x0) * cr.w,
+    h: (cropSel.y1 - cropSel.y0) * cr.h
+  };
+  strokes = [];
+  cropSel = null; cropBox.style.display = 'none';
+  $('cropBar').classList.add('hidden');
+  render();
+};
+$('btnCancelCrop').onclick = function () {
+  cropSel = null; cropBox.style.display = 'none';
+  $('cropBar').classList.add('hidden');
+};
+
+/* ---------- 标签与备注 ---------- */
+function buildChips(el, arr, onToggle) {
+  el.innerHTML = '';
+  arr.forEach(function (t) {
+    var c = document.createElement('button');
+    c.className = 'chip'; c.textContent = t;
+    c.onclick = function () { onToggle(t); };
+    el.appendChild(c);
+  });
+}
+
+function syncChips() {
+  Array.prototype.forEach.call($('reasonChips').children, function (c, i) {
+    c.classList.toggle('on', selReasons.indexOf(REASONS[i]) >= 0);
+  });
+}
+
+/* 编辑页：归属文件夹选择（学科固定为进入时的学科） */
+function renderFolderChips() {
+  var box = $('folderChips'); box.innerHTML = '';
+  function mk(label, fid, on) {
+    var c = document.createElement('button');
+    c.className = 'chip' + (on ? ' on' : '');
+    c.textContent = label;
+    c.onclick = function () { selFolder = fid; renderFolderChips(); };
+    box.appendChild(c);
+  }
+  mk('不放入文件夹', null, !selFolder);
+  folders.forEach(function (f) {
+    if ((f.subject || '') !== curSubject) return;
+    mk('📁 ' + f.name, f.id, selFolder === f.id);
+  });
+}
+
+buildChips($('reasonChips'), REASONS, function (t) {
+  var i = selReasons.indexOf(t);
+  if (i >= 0) selReasons.splice(i, 1); else selReasons.push(t);
+  syncChips();
+});
+QUICK.forEach(function (q) {
+  var c = document.createElement('button');
+  c.className = 'chip'; c.textContent = q;
+  c.onclick = function () {
+    var ta = $('noteInput');
+    ta.value = ta.value ? ta.value.replace(/[。；;，,\s]*$/, '') + '；' + q : q;
+  };
+  $('noteQuick').appendChild(c);
+});
+
+/* ---------- 打开编辑 ---------- */
+function openEdit() {
+  show('editView');
+  setTool('erase');
+  render();
+  syncChips();
+  renderFolderChips();
+  renderMemoList();
+}
+
+function loadFile(file) {
+  var done = function (im) {
+    // 统一画到 canvas，纠偏和编辑都用它
+    var c = document.createElement('canvas');
+    var iw = im.width, ih = im.height;
+    var k = Math.min(1, 2500 / Math.max(iw, ih));
+    c.width = Math.round(iw * k); c.height = Math.round(ih * k);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+    srcFull = c;
+    if (!editingId) { selReasons = []; $('noteInput').value = ''; editMemos = []; selFolder = curFolder ? curFolder.id : null; }
+    openCorrect();
+  };
+  if (window.createImageBitmap) {
+    createImageBitmap(file, { imageOrientation: 'from-image' }).then(done).catch(function () {
+      var im = new Image();
+      im.onload = function () { done(im); };
+      im.src = URL.createObjectURL(file);
+    });
+  } else {
+    var im2 = new Image();
+    im2.onload = function () { done(im2); };
+    im2.src = URL.createObjectURL(file);
+  }
+}
+
+$('btnCam').onclick = function () { editingId = null; editFrom = 'home'; $('fileCam').click(); };
+$('btnGallery').onclick = function () { editingId = null; editFrom = 'home'; $('fileGallery').click(); };
+$('fileCam').onchange = function (e) { if (e.target.files[0]) loadFile(e.target.files[0]); e.target.value = ''; };
+$('fileGallery').onchange = function (e) { if (e.target.files[0]) loadFile(e.target.files[0]); e.target.value = ''; };
+
+$('btnSave').onclick = function () {
+  render();
+  var dataURL = cv.toDataURL('image/jpeg', 0.85);
+  var item = {
+    image: dataURL,
+    origImage: srcFull ? srcFull.toDataURL('image/jpeg', 0.8) : '',
+    subject: curSubject || '',
+    folderId: selFolder || null,
+    reasons: selReasons.slice(),
+    note: $('noteInput').value.trim(),
+    memos: editMemos.slice(),
+    reviews: [],
+    mastered: false,
+    createdAt: Date.now()
+  };
+  if (editingId) {
+    var old = null;
+    items.forEach(function (it) { if (it.id === editingId) old = it; });
+    item.id = editingId;
+    if (old) {
+      item.mastered = old.mastered;
+      item.createdAt = old.createdAt;
+      item.reviews = old.reviews || [];
+      if (!item.origImage) item.origImage = old.origImage || '';
+    }
+  }
+  DB.put(item).then(function () {
+    var backToReview = (editFrom === 'review' && editingId);
+    editingId = null;
+    if (backToReview) { show('reviewView'); renderReview(); refresh(); }
+    else { show('homeView'); refresh(); }
+  });
+};
+$('btnCancelEdit').onclick = function () {
+  var backToReview = (editFrom === 'review' && editingId);
+  editingId = null;
+  if (backToReview) { show('reviewView'); renderReview(); refresh(); }
+  else { show('homeView'); refresh(); }
+};
+
+/* 编辑页顶部图标栏 */
+$('edSaveTop').onclick = function () { $('btnSave').click(); };
+$('edBackTop').onclick = function () { $('btnCancelEdit').click(); };
+
+/* ---------- 复习 ---------- */
+function openReview(id) {
+  rvList = filtered();
+  rvIdx = 0;
+  for (var i = 0; i < rvList.length; i++) if (rvList[i].id === id) { rvIdx = i; break; }
+  show('reviewView');
+  renderReview();
+}
+
+function renderReview() {
+  var it = rvList[rvIdx];
+  if (!it) { show('homeView'); return; }
+  $('rvImg').src = it.image;
+  $('rvPos').textContent = (rvIdx + 1) + ' / ' + rvList.length + (it.mastered ? '（已掌握）' : '');
+  var tags = '';
+  if (it.subject) tags += '<span class="chip on">' + it.subject + '</span>';
+  (it.reasons || []).forEach(function (r) { tags += '<span class="chip">' + r + '</span>'; });
+  $('rvTags').innerHTML = tags;
+  $('rvNote').textContent = it.note || '';
+  $('tbMaster').classList.toggle('on', !!it.mastered);
+
+  /* 到期提示 + 打卡次数 */
+  var rv = it.reviews || [];
+  $('rvCheckCount').textContent = rv.length ? '已打卡' + rv.length + '次' : '';
+  /* 今日已看过打卡则按钮置灰提示 */
+  var viewedToday = hasViewToday(it);
+  $('rvCheckView').textContent = viewedToday ? '👀 今日已打卡' : '👀 看过打卡';
+  $('rvCheckView').classList.toggle('on', viewedToday);
+  if (it.mastered) {
+    $('rvDueText').textContent = '🎉 这题已掌握';
+  } else {
+    var due = nextDue(it);
+    var dd = new Date(due);
+    $('rvDueText').textContent = Date.now() >= due
+      ? '📌 到时间该复习了'
+      : '建议下次复习：' + (dd.getMonth() + 1) + '月' + dd.getDate() + '日';
+  }
+
+  /* 语音备忘回放 */
+  var memos = it.memos || [];
+  $('rvMemoSect').style.display = memos.length ? '' : 'none';
+  var mb = $('rvMemos'); mb.innerHTML = '';
+  memos.forEach(function (m, idx) {
+    var row = document.createElement('div'); row.className = 'memo-row';
+    var pb = document.createElement('button'); pb.className = 'pb'; pb.textContent = '▶';
+    pb.onclick = function () { playBlob(pb, m.blob); };
+    var info = document.createElement('span');
+    info.textContent = '备忘' + (idx + 1) + ' · ' + Math.round(m.duration) + '秒 · ' + fmtTime(m.createdAt);
+    row.appendChild(pb); row.appendChild(info);
+    mb.appendChild(row);
+  });
+
+  /* 复习记录清单 */
+  var hb = $('rvHistory'); hb.innerHTML = '';
+  rv.slice().reverse().forEach(function (r, idx) {
+    var row = document.createElement('div'); row.className = 'hist-row';
+    var txt = document.createElement('span');
+    txt.textContent = (r.type === 'voice' ? '🎤' : '👀') + ' 第' + (rv.length - idx) + '次复习 · ' +
+      (r.type === 'voice' ? '语音打卡' : '看过打卡') + ' · ' + fmtTime(r.createdAt) +
+      (r.type === 'voice' ? '（' + Math.round(r.duration) + '秒）' : '');
+    row.appendChild(txt);
+    if (r.type === 'voice' && r.blob) {
+      var pb2 = document.createElement('button'); pb2.className = 'pb'; pb2.textContent = '▶';
+      pb2.onclick = function () { playBlob(pb2, r.blob); };
+      row.appendChild(pb2);
+    }
+    hb.appendChild(row);
+  });
+  var createRow = document.createElement('div'); createRow.className = 'hist-row';
+  createRow.textContent = '📝 整理于 ' + fmtTime(it.createdAt);
+  hb.appendChild(createRow);
+}
+
+function sameDay(a, b) {
+  var x = new Date(a), y = new Date(b);
+  return x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
+}
+/* 今天是否已「看过打卡」 */
+function hasViewToday(it) {
+  var rv = it.reviews || [];
+  for (var i = rv.length - 1; i >= 0; i--) {
+    if (rv[i].type === 'view' && sameDay(rv[i].createdAt, Date.now())) return true;
+  }
+  return false;
+}
+
+/* 打卡 */
+$('rvCheckView').onclick = function () {
+  var it = rvList[rvIdx]; if (!it) return;
+  if (hasViewToday(it)) { toast('今天已经打过卡了，明天再来吧'); return; }
+  it.reviews = it.reviews || [];
+  it.reviews.push({ type: 'view', createdAt: Date.now() });
+  DB.put(it).then(function () { renderReview(); refresh(); toast('打卡成功'); });
+};
+$('rvCheckVoice').onclick = function () {
+  if (vrec.rec && vrec.target === 'checkin') { stopVoice(); }
+  else if (vrec.rec) { cancelVoice(); startVoice('checkin'); }
+  else startVoice('checkin');
+};
+$('btnMemoRec').onclick = function () {
+  if (vrec.rec && vrec.target === 'memo') { stopVoice(); }
+  else if (vrec.rec) { cancelVoice(); startVoice('memo'); }
+  else startVoice('memo');
+};
+
+/* 复习页左右滑动切换题目 */
+(function () {
+  var sx = 0, sy = 0, st = 0;
+  var el = $('reviewView');
+  el.addEventListener('touchstart', function (e) {
+    if (e.touches.length !== 1) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+  }, { passive: true });
+  el.addEventListener('touchend', function (e) {
+    if (!sx) return;
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    sx = 0;
+    if (Date.now() - st > 600) return;           // 长按慢拖不算
+    if (Math.abs(dx) < 60) return;               // 位移太短不算
+    if (Math.abs(dx) < Math.abs(dy) * 1.5) return; // 竖向滑动不算
+    if (dx < 0) goNext(); else goPrev();
+  }, { passive: true });
+})();
+
+
+/* 复习页操作（顶部图标栏） */
+function goPrev() { if (rvIdx > 0) { rvIdx--; renderReview(); } }
+function goNext() { if (rvIdx < rvList.length - 1) { rvIdx++; renderReview(); } }
+$('tbBack').onclick = function () { show('homeView'); refresh(); };
+$('tbPrev').onclick = goPrev;
+$('tbNext').onclick = goNext;
+$('tbMaster').onclick = function () {
+  var it = rvList[rvIdx]; if (!it) return;
+  it.mastered = !it.mastered;
+  DB.put(it).then(function () { renderReview(); refresh(); });
+};
+
+/* 查看原图 */
+$('rvImg').onclick = function () {
+  var it = rvList[rvIdx]; if (!it) return;
+  $('origImg').src = it.image; // 图片限高显示，点按看处理后大图
+  $('origMask').classList.remove('hidden');
+};
+$('tbOrig').onclick = function () {
+  var it = rvList[rvIdx]; if (!it) return;
+  if (!it.origImage) { toast('这条错题没有保存原图（旧数据需重新录入）'); return; }
+  $('origImg').src = it.origImage;
+  $('origMask').classList.remove('hidden');
+};
+$('origMask').onclick = function () {
+  $('origMask').classList.add('hidden');
+  $('origImg').src = '';
+};
+$('tbExport').onclick = function () {
+  var it = rvList[rvIdx]; if (!it) return;
+  var a = document.createElement('a');
+  a.href = it.image;
+  var d = new Date(it.createdAt);
+  var ds = d.getFullYear() + '' + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+  a.download = '错题_' + (it.subject || '') + '_' + ds + '.jpg';
+  a.click();
+};
+$('tbEdit').onclick = function () {
+  var it = rvList[rvIdx]; if (!it) return;
+  editingId = it.id;
+  editFrom = 'review';
+  var im = new Image();
+  im.onload = function () {
+    img = im; cropRect = null; strokes = []; mode = 'orig';
+    srcFull = null; // 编辑旧题时没有原始照片，防止残留上一张被误存
+    Array.prototype.forEach.call(document.querySelectorAll('.modeBtn'), function (x) {
+      x.classList.toggle('on', x.dataset.m === 'orig');
+    });
+    selReasons = (it.reasons || []).slice();
+    selFolder = it.folderId || null;
+    $('noteInput').value = it.note || '';
+    editMemos = (it.memos || []).slice();
+    openEdit();
+  };
+  im.src = it.image;
+};
+$('tbDel').onclick = function () {
+  var it = rvList[rvIdx]; if (!it) return;
+  if (!confirm('确定删除这道错题吗？')) return;
+  DB.del(it.id).then(function () {
+    refresh().then(function () {
+      rvList = filtered();
+      if (rvIdx >= rvList.length) rvIdx = rvList.length - 1;
+      if (rvIdx < 0) show('homeView'); else renderReview();
+    });
+  });
+};
+
+/* ---------- 启动 ---------- */
+refresh();
+})();
+</script>
+</body>
+</html>
