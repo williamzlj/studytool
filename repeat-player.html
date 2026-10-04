@@ -59,6 +59,23 @@
   .trimBtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   .trimBtns button { flex: 1; min-width: 120px; font-size: 14px; padding: 10px; }
   .trimTip { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 8px; }
+  /* 播放位置亮点 */
+  .trimPos { position: absolute; top: 15px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: #fff; border: 3px solid #2563eb; box-shadow: 0 0 5px rgba(37,99,235,.7); z-index: 3; pointer-events: none; }
+  .trimPos.hidden { display: none; }
+  /* 停止按钮 / 折叠按钮 */
+  .stopBtn { width: 52px; height: 52px; border-radius: 50%; font-size: 18px; flex: none; color: #dc2626; border-color: #fca5a5; }
+  .rec-toggle { margin-left: auto; flex: none; font-size: 12px; padding: 6px 10px; border-radius: 8px; color: #059669; border-color: #a7f3d0; }
+  .rec-body.collapsed { display: none; }
+  /* 保存对话框 */
+  #saveMask { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #saveMask.hidden { display: none; }
+  .saveBox { background: #fff; border-radius: 14px; padding: 16px; width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; }
+  .saveBox .sect2 { font-weight: bold; font-size: 14px; margin: 12px 0 6px; }
+  #saveName { width: 100%; padding: 10px; font-size: 15px; border: 1px solid #d1d5db; border-radius: 10px; font-family: inherit; }
+  #saveNote { width: 100%; padding: 10px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 10px; min-height: 56px; font-family: inherit; margin-top: 8px; }
+  .tagRow { display: flex; flex-wrap: wrap; gap: 6px; }
+  .saveBtns { display: flex; gap: 8px; margin-top: 14px; }
+  .saveBtns button { flex: 1; padding: 10px; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -80,10 +97,11 @@
   <div class="trimBox">
     <div class="trimName" id="trimName"></div>
     <div class="trimInfo" id="trimSeg"></div>
-    <div class="trimLabels"><span id="trimStartLbl"></span><span id="trimEndLbl"></span></div>
+    <div class="trimLabels"><span id="trimStartLbl"></span><span id="trimPosLbl" style="color:#2563eb;font-weight:bold;"></span><span id="trimEndLbl"></span></div>
     <div class="trimTrack" id="trimTrack">
       <div class="trimRail"></div>
       <div class="trimSel" id="trimSel"></div>
+      <div class="trimPos hidden" id="trimPos"></div>
       <div class="trimHandle s" id="hStart"></div>
       <div class="trimHandle e" id="hEnd"></div>
     </div>
@@ -107,12 +125,28 @@
   </div>
 </div>
 
+<!-- 保存录音对话框（命名 + 标签 + 备注） -->
+<div id="saveMask" class="hidden">
+  <div class="saveBox">
+    <div class="trimName">💾 保存录音</div>
+    <input id="saveName" placeholder="录音名称">
+    <div class="sect2">🏷 点选标签（自动加到名称后面）</div>
+    <div class="tagRow" id="tagChips"></div>
+    <div class="sect2">📝 补充备注（可选）</div>
+    <textarea id="saveNote" placeholder="比如：第3课课文、容易读错的单词…"></textarea>
+    <div class="saveBtns">
+      <button id="saveCancel" class="danger">丢弃</button>
+      <button id="saveOk" style="background:#059669;color:#fff;border-color:#059669">✔ 保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
 'use strict';
 var $ = function (id) { return document.getElementById(id); };
 
-var SPEEDS = [0.75, 1, 1.25, 1.5];
+var SPEEDS = [0.5, 0.75, 1, 1.5, 2];
 var REPEATS = [[1, '1遍'], [3, '3遍'], [5, '5遍'], [0, '循环']];
 var GAPS = [[0, '不停顿'], [1, '停1秒'], [2, '停2秒'], [3, '停3秒']];
 
@@ -231,6 +265,7 @@ function startWebAudioRec(st) {
 }
 
 function startRec() {
+  stopCur(); /* 录音前停止播放，避免把播放的声音录进去 */
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     alert('当前浏览器不支持录音，请在 iPhone 上用 Safari 打开');
     return;
@@ -244,7 +279,10 @@ function startRec() {
       var mime = pickMime();
       recorder = mime ? new MediaRecorder(st, { mimeType: mime }) : new MediaRecorder(st);
       recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
-      recorder.onstop = saveRec;
+      recorder.onstop = function () {
+        var blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+        openSaveDialog(blob, (Date.now() - recStart) / 1000);
+      };
       recorder.start();
     } else {
       waRec = startWebAudioRec(st);
@@ -266,28 +304,68 @@ function stopRec() {
   clearInterval(timerInt);
   $('recBtn').classList.remove('recording');
   $('recBtn').textContent = '🎤';
-  $('recState').textContent = '已保存';
+  $('recState').textContent = '保存录音…';
   if (recorder && recorder.state !== 'inactive') recorder.stop();
-  if (waRec) finishSave(waRec.stop());
+  else if (waRec) openSaveDialog(waRec.stop(), (Date.now() - recStart) / 1000);
   if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+  $('recTime').textContent = '00:00';
 }
 
-function saveRec() {
-  var blob = new Blob(chunks, { type: (recorder && recorder.mimeType) || 'audio/webm' });
-  finishSave(blob);
+function resetRecUI() {
+  $('recState').textContent = '点一下开始录音，再点一下保存';
+  $('recTime').textContent = '00:00';
 }
 
-function finishSave(blob) {
-  var dur = (Date.now() - recStart) / 1000;
+/* ---------- 保存对话框（命名 + 标签 + 备注） ---------- */
+var pendingSave = null;
+var selTags = {};
+
+function autoTags() {
   var d = new Date();
-  var name = '录音 ' + (d.getMonth() + 1) + '-' + d.getDate() + ' ' +
-             ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-  DB.put({ name: name, blob: blob, duration: dur, createdAt: Date.now(), speed: 1, repeat: 3, gap: 1 })
-    .then(function () {
-      setTimeout(function () { $('recState').textContent = '点一下开始录音，再点一下保存'; $('recTime').textContent = '00:00'; }, 1200);
-      renderList();
-    });
+  return [d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日',
+          '星期' + '日一二三四五六'.charAt(d.getDay()),
+          '语文课文', '英语', '单词', '古诗', '散文'];
 }
+
+function defaultRecName() {
+  var d = new Date();
+  return '录音 ' + (d.getMonth() + 1) + '-' + d.getDate() + ' ' +
+         ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+}
+
+function openSaveDialog(blob, dur) {
+  pendingSave = { blob: blob, dur: dur };
+  selTags = {};
+  $('saveName').value = defaultRecName();
+  $('saveNote').value = '';
+  var box = $('tagChips'); box.innerHTML = '';
+  autoTags().forEach(function (t) {
+    box.appendChild(chip(t, false, function () {
+      selTags[t] = !selTags[t];
+      this.classList.toggle('on', !!selTags[t]);
+    }));
+  });
+  $('saveMask').classList.remove('hidden');
+}
+
+$('saveOk').onclick = function () {
+  if (!pendingSave) return;
+  var name = $('saveName').value.trim() || defaultRecName();
+  var tags = autoTags().filter(function (t) { return selTags[t]; });
+  if (tags.length) name += '  ' + tags.map(function (t) { return '#' + t; }).join(' ');
+  var note = $('saveNote').value.trim();
+  var p = pendingSave; pendingSave = null;
+  $('saveMask').classList.add('hidden');
+  DB.put({ name: name, note: note, blob: p.blob, duration: p.dur, createdAt: Date.now(), speed: 1, repeat: 3, gap: 1 })
+    .then(function () { resetRecUI(); renderList(); });
+};
+$('saveCancel').onclick = function () {
+  if (!pendingSave) return;
+  if (!confirm('丢弃这段录音？')) return;
+  pendingSave = null;
+  $('saveMask').classList.add('hidden');
+  resetRecUI();
+};
 
 $('recBtn').onclick = function () { if (recording) stopRec(); else startRec(); };
 
@@ -330,8 +408,8 @@ function segDur(it) {
 
 function togglePlay(item) {
   if (cur && cur.id === item.id) {
-    if (cur.audio.paused) { cur.audio.play(); markPlayingUI(item.id, statusText(item)); }
-    else { cur.audio.pause(); markPlayingUI(item.id, '已暂停'); }
+    if (cur.audio.paused) { cur.audio.play(); updatePlayBtns(item.id, true); }
+    else { cur.audio.pause(); updatePlayBtns(item.id, false); }
     return;
   }
   stopCur();
@@ -343,13 +421,11 @@ function togglePlay(item) {
   repeatLeft = item.repeat === 0 ? Infinity : (item.repeat || 1);
   cur = { id: item.id, audio: audio, url: url, timer: 0 };
 
-  /* 播到区间终点（或录音结尾）：按复读次数/停顿处理 */
   function segEnded() {
     if (!cur || cur.audio !== audio) return;
     audio.pause();
     if (repeatLeft === Infinity || repeatLeft > 1) {
       if (repeatLeft !== Infinity) repeatLeft--;
-      markPlayingUI(item.id, statusText(item));
       cur.timer = setTimeout(function () {
         if (cur && cur.audio === audio) { audio.currentTime = t0; audio.play(); }
       }, (item.gap || 0) * 1000);
@@ -365,16 +441,33 @@ function togglePlay(item) {
   audio.onerror = function () { stopCur(); renderList(); };
   audio.currentTime = t0;
   audio.play().then(function () { audio.currentTime = t0; }).catch(function () { stopCur(); });
-  markPlayingUI(item.id, statusText(item));
+  updatePlayBtns(item.id, true);
+}
+
+function stopPlay(item) {
+  if (cur && cur.id === item.id) { stopCur(); renderList(); }
+}
+
+function updatePlayBtns(id, playing) {
+  Array.prototype.forEach.call(document.querySelectorAll('.rec'), function (el) {
+    if (+el.dataset.id !== id) {
+      var pb = el.querySelector('.playBtn'); pb.classList.remove('playing'); pb.textContent = '▶';
+      return;
+    }
+    var pb = el.querySelector('.playBtn');
+    pb.classList.toggle('playing', playing);
+    pb.textContent = playing ? '⏸' : '▶';
+  });
 }
 
 function statusText(item) {
-  var total = item.repeat === 0 ? '循环' : item.repeat;
   if (item.repeat === 0) return '循环播放中…';
-  return '还剩 ' + repeatLeft + ' / ' + total + ' 遍';
+  return '还剩 ' + repeatLeft + ' / ' + item.repeat + ' 遍';
 }
 
 /* ---------- 列表 ---------- */
+var expandState = {}; /* id -> true/false；未设置时默认第一条展开 */
+
 function chip(text, on, fn) {
   var c = document.createElement('button');
   c.className = 'chip' + (on ? ' on' : '');
@@ -388,25 +481,36 @@ function renderList() {
     recs = all.sort(function (a, b) { return b.createdAt - a.createdAt; });
     var box = $('list'); box.innerHTML = '';
     if (!recs.length) { box.innerHTML = '<div class="empty">还没有录音，点上方麦克风开始</div>'; return; }
-    recs.forEach(function (it) {
+    recs.forEach(function (it, idx) {
+      var expanded = (it.id in expandState) ? expandState[it.id] : (idx === 0);
       var card = document.createElement('div');
       card.className = 'rec'; card.dataset.id = it.id;
 
       var head = document.createElement('div'); head.className = 'rec-head';
-      var pb = document.createElement('button'); pb.className = 'playBtn'; pb.textContent = '▶';
+      var pb = document.createElement('button'); pb.className = 'playBtn'; pb.textContent = '▶'; pb.title = '播放 / 暂停（从当前位置继续）';
       pb.onclick = function () { togglePlay(it); };
       head.appendChild(pb);
+      var sb = document.createElement('button'); sb.className = 'stopBtn'; sb.textContent = '⏹'; sb.title = '停止（回到开头）';
+      sb.onclick = function () { stopPlay(it); };
+      head.appendChild(sb);
       var mid = document.createElement('div');
       var nm = document.createElement('div'); nm.className = 'rec-name'; nm.textContent = it.name;
       var meta = document.createElement('div'); meta.className = 'rec-meta';
       var trimmed = (it.trimStart && it.trimStart > 0.05) || (it.trimEnd && it.trimEnd < it.duration - 0.05);
       meta.textContent = (trimmed ? '✂片段 ' + fmt(segDur(it)) + ' / 原' + fmt(it.duration) : fmt(it.duration)) +
-        ' · ' + new Date(it.createdAt).toLocaleDateString();
+        ' · ' + new Date(it.createdAt).toLocaleDateString() + (it.note ? ' · ' + it.note : '');
       mid.appendChild(nm); mid.appendChild(meta);
       head.appendChild(mid);
       var st = document.createElement('div'); st.className = 'rec-status';
       head.appendChild(st);
+      var tg = document.createElement('button'); tg.className = 'rec-toggle';
+      tg.textContent = expanded ? '收起 ▴' : '设置 ▾';
+      tg.onclick = function () { expandState[it.id] = !expanded; renderList(); };
+      head.appendChild(tg);
       card.appendChild(head);
+
+      var body = document.createElement('div');
+      body.className = 'rec-body' + (expanded ? '' : ' collapsed');
 
       var opts = document.createElement('div'); opts.className = 'opts';
       var rSpeed = document.createElement('div'); rSpeed.className = 'optsRow';
@@ -435,7 +539,7 @@ function renderList() {
         }));
       });
       opts.appendChild(rGap);
-      card.appendChild(opts);
+      body.appendChild(opts);
 
       var row2 = document.createElement('div'); row2.className = 'row2';
       var trimBtn = document.createElement('button'); trimBtn.textContent = '✂ 裁剪';
@@ -461,8 +565,9 @@ function renderList() {
         DB.del(it.id).then(renderList);
       };
       row2.appendChild(trimBtn); row2.appendChild(rn); row2.appendChild(dl); row2.appendChild(del);
-      card.appendChild(row2);
+      body.appendChild(row2);
 
+      card.appendChild(body);
       box.appendChild(card);
     });
   });
@@ -478,6 +583,7 @@ function fmt1(sec) {
 }
 
 function openTrim(it) {
+  stopCur(); /* 打开裁剪前停止正在播放的录音 */
   closeTrim();
   var url = URL.createObjectURL(it.blob);
   var au = new Audio(url);
@@ -496,6 +602,10 @@ function openTrim(it) {
   };
   au.ontimeupdate = function () {
     if (!trimCtx || trimCtx.audio !== au) return;
+    /* 更新播放位置亮点 */
+    $('trimPos').classList.remove('hidden');
+    $('trimPos').style.left = Math.max(0, Math.min(100, au.currentTime / (trimCtx.dur || 1) * 100)) + '%';
+    $('trimPosLbl').textContent = '▶ ' + fmt1(au.currentTime);
     if (au.currentTime >= trimCtx.t1 - 0.02) {
       au.pause(); au.currentTime = trimCtx.t0;
       $('trimPreview').textContent = '▶ 试听片段';
@@ -513,6 +623,8 @@ function closeTrim() {
     URL.revokeObjectURL(trimCtx.url);
     trimCtx = null;
   }
+  $('trimPos').classList.add('hidden');
+  $('trimPosLbl').textContent = '';
   $('trimMask').classList.add('hidden');
 }
 
@@ -529,6 +641,10 @@ function updateTrimUI() {
   $('trimStartLbl').textContent = '起点 ' + fmt1(c.t0);
   $('trimEndLbl').textContent = '终点 ' + fmt1(c.t1);
   $('trimSeg').textContent = '保留片段 ' + fmt1(Math.max(0, c.t1 - c.t0));
+  /* 未播放时亮点停在起点位置 */
+  if (c.audio.paused) {
+    $('trimPos').style.left = Math.max(0, Math.min(100, (c.audio.currentTime || c.t0) / d * 100)) + '%';
+  }
 }
 
 /* 拖拽手柄（pointer events，手机/桌面通用） */
