@@ -6,39 +6,57 @@
 <title>复读机</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { font-size: 15px; }
   body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f3f4f6; color: #1f2937; }
-  header { background: #059669; color: #fff; padding: 14px 16px; font-size: 18px; font-weight: bold; position: sticky; top: 0; z-index: 10; }
-  .wrap { padding: 14px; max-width: 720px; margin: 0 auto; }
-  button { font-family: inherit; cursor: pointer; border: 1px solid #d1d5db; background: #fff; border-radius: 10px; padding: 10px 14px; font-size: 15px; }
+  header { background: #059669; color: #fff; padding: 12px 14px; font-size: 17px; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+  .wrap { padding: 12px; max-width: 720px; margin: 0 auto; }
+  button { font-family: inherit; cursor: pointer; border: 1px solid #d1d5db; background: #fff; border-radius: 10px; padding: 8px 12px; font-size: 14px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
   button:hover { background: #dbeafe; }
-  .chip { padding: 6px 12px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; font-size: 13px; user-select: none; }
+  .chip { padding: 5px 10px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; font-size: 12px; user-select: none; }
   .chip:hover { background: #dbeafe; }
   .chip.on { background: #059669; color: #fff; border-color: #059669; }
   /* 录音区 */
-  #recCard { background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; padding: 24px 14px; text-align: center; }
-  #recBtn { width: 110px; height: 110px; border-radius: 50%; border: none; background: #059669; color: #fff; font-size: 40px; box-shadow: 0 4px 14px rgba(5,150,105,.35); }
+  #recCard { background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; padding: 20px 14px; text-align: center; }
+  #recBtn { width: 96px; height: 96px; border-radius: 50%; border: none; background: #059669; color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,.35); }
+  #recBtn svg { width: 40px; height: 40px; }
   #recBtn.recording { background: #dc2626; animation: pulse 1.2s infinite; }
   @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-  #recState { margin-top: 12px; font-size: 15px; color: #6b7280; }
-  #recTime { font-size: 28px; font-weight: bold; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  #recState { margin-top: 10px; font-size: 14px; color: #6b7280; }
+  #recTime { font-size: 24px; font-weight: bold; margin-top: 4px; font-variant-numeric: tabular-nums; }
   /* 列表 */
-  .rec { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 12px; margin-top: 12px; }
+  .rec { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 10px; margin-top: 10px; }
   .rec.playing { border-color: #059669; box-shadow: 0 0 0 2px rgba(5,150,105,.2); }
-  .rec-head { display: flex; align-items: center; gap: 10px; }
-  .playBtn { width: 52px; height: 52px; border-radius: 50%; font-size: 20px; flex: none; border-color: #059669; color: #059669; }
+  .rec-head { display: flex; align-items: center; gap: 8px; }
+  .playBtn { width: 44px; height: 44px; border-radius: 50%; flex: none; border-color: #059669; color: #059669; background: #fff; }
+  .playBtn svg { width: 20px; height: 20px; }
   .playBtn.playing { background: #059669; color: #fff; }
-  .rec-name { font-size: 15px; font-weight: bold; }
-  .rec-meta { font-size: 12px; color: #9ca3af; margin-top: 2px; }
-  .rec-status { font-size: 12px; color: #059669; margin-left: auto; flex: none; }
+  .stopBtn { width: 44px; height: 44px; border-radius: 50%; flex: none; color: #dc2626; border-color: #fca5a5; background: #fff; }
+  .stopBtn svg { width: 18px; height: 18px; }
+  .rec-name { font-size: 14px; font-weight: bold; word-break: break-all; }
+  .rec-meta { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+  .rec-status { font-size: 11px; color: #059669; flex: none; margin-left: 2px; }
+  .rec-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 7px 0 0 52px; }
+  .rec-tags .t { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+  .rec-note { font-size: 12px; color: #4b5563; margin: 5px 0 0 52px; word-break: break-all; }
   .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
   .opts .lbl { font-size: 12px; color: #6b7280; flex: none; }
-  .optsRow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
+  .optsRow { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 4px; }
   .optsRow .lbl { font-size: 12px; color: #6b7280; width: 30px; flex: none; }
-  .row2 { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
-  .row2 button { font-size: 13px; padding: 6px 12px; }
+  .optsRow .chip { font-size: 12px; padding: 5px 9px; }
+  .row2 { display: flex; gap: 6px; margin-top: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .row2 button { font-size: 12px; padding: 6px 10px; }
   .danger { color: #dc2626; border-color: #fca5a5; }
-  .empty { text-align: center; color: #9ca3af; padding: 40px 0; font-size: 15px; }
-  .sect { font-weight: bold; margin: 18px 0 2px; font-size: 15px; }
+  .empty { text-align: center; color: #9ca3af; padding: 40px 0; font-size: 14px; }
+  .sect { font-weight: bold; margin: 16px 0 2px; font-size: 14px; }
+  .rec-toggle { flex: none; font-size: 11px; padding: 5px 9px; border-radius: 8px; color: #059669; border-color: #a7f3d0; margin-left: auto; }
+  /* 小屏安卓（如三星 Note20 较短宽度场景） */
+  @media (max-width: 380px) {
+    html { font-size: 14px; }
+    button { font-size: 13px; }
+    .playBtn, .stopBtn { width: 40px; height: 40px; }
+    .playBtn svg { width: 18px; height: 18px; }
+    .optsRow .chip { font-size: 11px; padding: 4px 8px; }
+  }
   /* 剪裁面板 */
   #trimMask { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
   #trimMask.hidden { display: none; }
@@ -63,8 +81,6 @@
   .trimPos { position: absolute; top: 15px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: #fff; border: 3px solid #2563eb; box-shadow: 0 0 5px rgba(37,99,235,.7); z-index: 3; pointer-events: none; }
   .trimPos.hidden { display: none; }
   /* 停止按钮 / 折叠按钮 */
-  .stopBtn { width: 52px; height: 52px; border-radius: 50%; font-size: 18px; flex: none; color: #dc2626; border-color: #fca5a5; }
-  .rec-toggle { margin-left: auto; flex: none; font-size: 12px; padding: 6px 10px; border-radius: 8px; color: #059669; border-color: #a7f3d0; }
   .rec-body.collapsed { display: none; }
   /* 保存对话框 */
   #saveMask { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
@@ -83,7 +99,9 @@
 
 <div class="wrap">
   <div id="recCard">
-    <button id="recBtn">🎤</button>
+    <button id="recBtn" aria-label="录音">
+      <svg id="recIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a1 1 0 1 0-2 0 3 3 0 0 1-6 0 1 1 0 1 0-2 0 5 5 0 0 0 4 4.9V18H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-2.1A5 5 0 0 0 17 11z"/></svg>
+    </button>
     <div id="recTime">00:00</div>
     <div id="recState">点一下开始录音，再点一下保存</div>
   </div>
@@ -130,9 +148,9 @@
   <div class="saveBox">
     <div class="trimName">💾 保存录音</div>
     <input id="saveName" placeholder="录音名称">
-    <div class="sect2">🏷 点选标签（自动加到名称后面）</div>
+    <div class="sect2">🏷 标签（点选，可多选）</div>
     <div class="tagRow" id="tagChips"></div>
-    <div class="sect2">📝 补充备注（可选）</div>
+    <div class="sect2">📝 备注（可选，和标签分开显示）</div>
     <textarea id="saveNote" placeholder="比如：第3课课文、容易读错的单词…"></textarea>
     <div class="saveBtns">
       <button id="saveCancel" class="danger">丢弃</button>
@@ -146,9 +164,17 @@
 'use strict';
 var $ = function (id) { return document.getElementById(id); };
 
-var SPEEDS = [0.5, 0.75, 1, 1.5, 2];
+var SPEEDS = [0.5, 0.75, 1, 1.5, 2, 3];
 var REPEATS = [[1, '1遍'], [3, '3遍'], [5, '5遍'], [0, '循环']];
 var GAPS = [[0, '不停顿'], [1, '停1秒'], [2, '停2秒'], [3, '停3秒']];
+
+/* 专业线性图标（currentColor 随按钮颜色） */
+var ICON = {
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.5-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a1 1 0 1 0-2 0 3 3 0 0 1-6 0 1 1 0 1 0-2 0 5 5 0 0 0 4 4.9V18H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-2.1A5 5 0 0 0 17 11z"/></svg>'
+};
 
 /* ---------- IndexedDB ---------- */
 var DB = {
@@ -290,7 +316,8 @@ function startRec() {
     recStart = Date.now();
     recording = true;
     $('recBtn').classList.add('recording');
-    $('recBtn').textContent = '⏹';
+    $('recIcon').outerHTML = '<svg id="recIcon" viewBox="0 0 24 24" fill="currentColor">' +
+      '<rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
     $('recState').textContent = '正在录音…再点一下保存';
     timerInt = setInterval(function () { $('recTime').textContent = fmt((Date.now() - recStart) / 1000); }, 200);
     $('recTime').textContent = '00:00';
@@ -303,7 +330,7 @@ function stopRec() {
   recording = false;
   clearInterval(timerInt);
   $('recBtn').classList.remove('recording');
-  $('recBtn').textContent = '🎤';
+  $('recIcon').outerHTML = ICON.mic.replace('<svg ', '<svg id="recIcon" ');
   $('recState').textContent = '保存录音…';
   if (recorder && recorder.state !== 'inactive') recorder.stop();
   else if (waRec) openSaveDialog(waRec.stop(), (Date.now() - recStart) / 1000);
@@ -352,11 +379,10 @@ $('saveOk').onclick = function () {
   if (!pendingSave) return;
   var name = $('saveName').value.trim() || defaultRecName();
   var tags = autoTags().filter(function (t) { return selTags[t]; });
-  if (tags.length) name += '  ' + tags.map(function (t) { return '#' + t; }).join(' ');
   var note = $('saveNote').value.trim();
   var p = pendingSave; pendingSave = null;
   $('saveMask').classList.add('hidden');
-  DB.put({ name: name, note: note, blob: p.blob, duration: p.dur, createdAt: Date.now(), speed: 1, repeat: 3, gap: 1 })
+  DB.put({ name: name, tags: tags, note: note, blob: p.blob, duration: p.dur, createdAt: Date.now(), speed: 1, repeat: 3, gap: 1 })
     .then(function () { resetRecUI(); renderList(); });
 };
 $('saveCancel').onclick = function () {
@@ -379,18 +405,16 @@ function stopCur() {
   cur.audio.pause();
   URL.revokeObjectURL(cur.url);
   cur = null;
-  markPlayingUI(null, '');
+  resetPlayingUI();
 }
 
-function markPlayingUI(id, statusText) {
+function resetPlayingUI() {
   Array.prototype.forEach.call(document.querySelectorAll('.rec'), function (el) {
-    var on = id !== null && +el.dataset.id === id;
-    el.classList.toggle('playing', on);
+    el.classList.remove('playing');
     var btn = el.querySelector('.playBtn');
-    btn.classList.toggle('playing', on);
-    btn.textContent = on ? '⏸' : '▶';
-    if (on) el.querySelector('.rec-status').textContent = statusText;
-    else el.querySelector('.rec-status').textContent = '';
+    btn.classList.remove('playing');
+    btn.innerHTML = ICON.play;
+    el.querySelector('.rec-status').textContent = '';
   });
 }
 
@@ -450,13 +474,14 @@ function stopPlay(item) {
 
 function updatePlayBtns(id, playing) {
   Array.prototype.forEach.call(document.querySelectorAll('.rec'), function (el) {
+    var btn = el.querySelector('.playBtn');
     if (+el.dataset.id !== id) {
-      var pb = el.querySelector('.playBtn'); pb.classList.remove('playing'); pb.textContent = '▶';
+      btn.classList.remove('playing');
+      btn.innerHTML = ICON.play;
       return;
     }
-    var pb = el.querySelector('.playBtn');
-    pb.classList.toggle('playing', playing);
-    pb.textContent = playing ? '⏸' : '▶';
+    btn.classList.toggle('playing', playing);
+    btn.innerHTML = playing ? ICON.pause : ICON.play;
   });
 }
 
@@ -487,27 +512,44 @@ function renderList() {
       card.className = 'rec'; card.dataset.id = it.id;
 
       var head = document.createElement('div'); head.className = 'rec-head';
-      var pb = document.createElement('button'); pb.className = 'playBtn'; pb.textContent = '▶'; pb.title = '播放 / 暂停（从当前位置继续）';
+      var pb = document.createElement('button'); pb.className = 'playBtn'; pb.title = '播放 / 暂停（从当前位置继续）';
+      pb.innerHTML = ICON.play;
       pb.onclick = function () { togglePlay(it); };
       head.appendChild(pb);
-      var sb = document.createElement('button'); sb.className = 'stopBtn'; sb.textContent = '⏹'; sb.title = '停止（回到开头）';
+      var sb = document.createElement('button'); sb.className = 'stopBtn'; sb.title = '停止（回到开头）';
+      sb.innerHTML = ICON.stop;
       sb.onclick = function () { stopPlay(it); };
       head.appendChild(sb);
-      var mid = document.createElement('div');
+      var mid = document.createElement('div'); mid.style.flex = '1'; mid.style.minWidth = '0';
       var nm = document.createElement('div'); nm.className = 'rec-name'; nm.textContent = it.name;
       var meta = document.createElement('div'); meta.className = 'rec-meta';
       var trimmed = (it.trimStart && it.trimStart > 0.05) || (it.trimEnd && it.trimEnd < it.duration - 0.05);
       meta.textContent = (trimmed ? '✂片段 ' + fmt(segDur(it)) + ' / 原' + fmt(it.duration) : fmt(it.duration)) +
-        ' · ' + new Date(it.createdAt).toLocaleDateString() + (it.note ? ' · ' + it.note : '');
+        ' · ' + new Date(it.createdAt).toLocaleDateString();
       mid.appendChild(nm); mid.appendChild(meta);
       head.appendChild(mid);
       var st = document.createElement('div'); st.className = 'rec-status';
       head.appendChild(st);
       var tg = document.createElement('button'); tg.className = 'rec-toggle';
-      tg.textContent = expanded ? '收起 ▴' : '设置 ▾';
+      tg.textContent = expanded ? '收起' : '设置';
       tg.onclick = function () { expandState[it.id] = !expanded; renderList(); };
       head.appendChild(tg);
       card.appendChild(head);
+
+      /* 标签行（独立一行，不拼进文件名） */
+      if (it.tags && it.tags.length) {
+        var tagRow = document.createElement('div'); tagRow.className = 'rec-tags';
+        it.tags.forEach(function (t) {
+          var s = document.createElement('span'); s.className = 't'; s.textContent = t;
+          tagRow.appendChild(s);
+        });
+        card.appendChild(tagRow);
+      }
+      /* 备注行（标签下方隔行显示） */
+      if (it.note) {
+        var note = document.createElement('div'); note.className = 'rec-note'; note.textContent = '📝 ' + it.note;
+        card.appendChild(note);
+      }
 
       var body = document.createElement('div');
       body.className = 'rec-body' + (expanded ? '' : ' collapsed');
@@ -570,6 +612,12 @@ function renderList() {
       card.appendChild(body);
       box.appendChild(card);
     });
+    if (cur) {
+      updatePlayBtns(cur.id, !cur.audio.paused);
+      var ci = findRec(cur.id);
+      var cardEl = document.querySelector('.rec[data-id="' + cur.id + '"] .rec-status');
+      if (ci && cardEl) cardEl.textContent = ci.repeat === 0 ? '循环中' : ('还剩 ' + repeatLeft + ' 遍');
+    }
   });
 }
 
