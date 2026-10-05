@@ -599,13 +599,13 @@ function buildFxGraph(item, audio) {
     var delayNode = ctx.createDelay(2); nodes.push(delayNode);
     var fbNode = ctx.createGain(); nodes.push(fbNode);
     var echoWet = ctx.createGain(); nodes.push(echoWet);
-    echoIn.connect(delayNode); delayNode.connect(fbNode); fbNode.connect(delayNode); delayNode.connect(echoWet); echoWet.connect(master);
+    src.connect(echoIn); echoIn.connect(delayNode); delayNode.connect(fbNode); fbNode.connect(delayNode); delayNode.connect(echoWet); echoWet.connect(master);
 
     /* 混响支路：src → 开关 → convolver → wet → master */
     var revIn = ctx.createGain(); revIn.gain.value = 0; nodes.push(revIn);
     var convNode = ctx.createConvolver(); nodes.push(convNode);
     var revWet = ctx.createGain(); nodes.push(revWet);
-    revIn.connect(convNode); convNode.connect(revWet); revWet.connect(master);
+    src.connect(revIn); revIn.connect(convNode); convNode.connect(revWet); revWet.connect(master);
 
     var st = { type: type0, lv: lv0, rate: rate0 };
     /* 倍速下：回声间隔 ÷rate（回声点随语音压缩同步前移）；混响脉冲 ÷rate，湿声 ×√rate 补偿能量 */
