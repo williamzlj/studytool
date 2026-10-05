@@ -6,7 +6,7 @@
  * 更新方式：修改任意工具页面后，把下面的 CACHE 版本号 +1，
  * 用户下次联网打开时会自动刷新缓存。
  */
-var CACHE = 'studytool-cache-v3';
+var CACHE = 'studytool-cache-v4';
 
 self.addEventListener('install', function (event) {
   /* 不预缓存固定列表：各页面首次访问时自动入缓存（stale-while-revalidate） */

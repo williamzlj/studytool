@@ -433,7 +433,7 @@ var selTags = {};
 
 function defaultRecName() {
   var d = new Date();
-  return '录音 ' + (d.getMonth() + 1) + '-' + d.getDate() + ' ' +
+  return '录音 ' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' +
          ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
 }
 
@@ -581,35 +581,66 @@ function makeImpulse(ctx, seconds, decay) {
   return buf;
 }
 
-/* 给正在播放的 audio 元素挂上效果链；返回清理函数，不支持时返回 null（走原声） */
+/* 给正在播放的 audio 元素挂上完整效果链（干声 + 回声支路 + 混响支路，支路用增益开关实时切换） */
 function buildFxGraph(item, audio) {
-  var fx = item.fx || 'none';
-  if (fx === 'none') return null;
   var ctx = getAudioCtx();
   if (!ctx) return null;
   var nodes = [];
+  var type0 = item.fx || 'none', lv0 = item.fxLv || 2, rate0 = item.speed || 1;
+  function echoP(lv) { return { delay: [0.22, 0.3, 0.42][lv - 1], fb: [0.2, 0.38, 0.55][lv - 1], wet: [0.25, 0.4, 0.55][lv - 1] }; }
+  function revP(lv) { return { secs: [1.0, 2.0, 3.2][lv - 1], decay: [2, 2.8, 3.6][lv - 1], wet: [0.25, 0.4, 0.55][lv - 1] }; }
   try {
     var src = ctx.createMediaElementSource(audio); nodes.push(src);
     var master = ctx.createGain(); master.connect(ctx.destination); nodes.push(master);
     src.connect(master); /* 干声始终保留 */
-    var lv = item.fxLv || 2, wet, delay, fb, conv;
-    if (fx === 'echo') {
-      var delayTime = [0.22, 0.3, 0.42][lv - 1];
-      var fbv = [0.2, 0.38, 0.55][lv - 1];
-      var wetV = [0.25, 0.4, 0.55][lv - 1];
-      delay = ctx.createDelay(2); delay.delayTime.value = delayTime; nodes.push(delay);
-      fb = ctx.createGain(); fb.gain.value = fbv; nodes.push(fb);
-      wet = ctx.createGain(); wet.gain.value = wetV; nodes.push(wet);
-      src.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(master);
-    } else {
-      var secs = [1.0, 2.0, 3.2][lv - 1];
-      var decay = [2, 2.8, 3.6][lv - 1];
-      var wetV2 = [0.25, 0.4, 0.55][lv - 1];
-      conv = ctx.createConvolver(); conv.buffer = makeImpulse(ctx, secs, decay); nodes.push(conv);
-      wet = ctx.createGain(); wet.gain.value = wetV2; nodes.push(wet);
-      src.connect(conv); conv.connect(wet); wet.connect(master);
+
+    /* 回声支路：src → 开关 → delay →(fb 反馈回路)→ wet → master */
+    var echoIn = ctx.createGain(); echoIn.gain.value = 0; nodes.push(echoIn);
+    var delayNode = ctx.createDelay(2); nodes.push(delayNode);
+    var fbNode = ctx.createGain(); nodes.push(fbNode);
+    var echoWet = ctx.createGain(); nodes.push(echoWet);
+    echoIn.connect(delayNode); delayNode.connect(fbNode); fbNode.connect(delayNode); delayNode.connect(echoWet); echoWet.connect(master);
+
+    /* 混响支路：src → 开关 → convolver → wet → master */
+    var revIn = ctx.createGain(); revIn.gain.value = 0; nodes.push(revIn);
+    var convNode = ctx.createConvolver(); nodes.push(convNode);
+    var revWet = ctx.createGain(); nodes.push(revWet);
+    revIn.connect(convNode); convNode.connect(revWet); revWet.connect(master);
+
+    var st = { type: type0, lv: lv0, rate: rate0 };
+    /* 倍速下：回声间隔 ÷rate（回声点随语音压缩同步前移）；混响脉冲 ÷rate，湿声 ×√rate 补偿能量 */
+    function applyEcho(lv, rate, t) {
+      var p = echoP(lv);
+      delayNode.delayTime.setTargetAtTime(p.delay / rate, t, 0.03);
+      fbNode.gain.setTargetAtTime(p.fb, t, 0.03);
+      echoWet.gain.setTargetAtTime(p.wet, t, 0.03);
     }
-    return { disconnect: function () { nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} }); } };
+    function applyRev(lv, rate, t) {
+      var p = revP(lv);
+      convNode.buffer = makeImpulse(ctx, Math.max(0.25, p.secs / rate), p.decay);
+      revWet.gain.setTargetAtTime(p.wet * Math.sqrt(rate), t, 0.03);
+    }
+    if (type0 === 'echo') { echoIn.gain.value = 1; applyEcho(lv0, rate0, ctx.currentTime); }
+    else if (type0 === 'reverb') { revIn.gain.value = 1; applyRev(lv0, rate0, ctx.currentTime); }
+
+    return {
+      disconnect: function () { nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} }); },
+      /* 实时切换效果类型/强度：开关增益 40ms 淡入淡出，避免咔哒爆音；支路里的残余尾音自然衰减 */
+      setFx: function (type, lv, rate) {
+        st.type = type; st.lv = lv; st.rate = rate;
+        var t = ctx.currentTime;
+        echoIn.gain.setTargetAtTime(type === 'echo' ? 1 : 0, t, 0.04);
+        revIn.gain.setTargetAtTime(type === 'reverb' ? 1 : 0, t, 0.04);
+        if (type === 'echo') applyEcho(lv, rate, t);
+        else if (type === 'reverb') applyRev(lv, rate, t);
+      },
+      setRate: function (r) {
+        st.rate = r;
+        var t = ctx.currentTime;
+        if (st.type === 'echo') applyEcho(st.lv, r, t);
+        else if (st.type === 'reverb') applyRev(st.lv, r, t);
+      }
+    };
   } catch (e) {
     return null;
   }
@@ -802,7 +833,10 @@ function renderList() {
       SPEEDS.forEach(function (s) {
         rSpeed.appendChild(chip(s + 'x', (it.speed || 1) === s, function () {
           it.speed = s; DB.put(it);
-          if (cur && cur.id === it.id) cur.audio.playbackRate = s;
+          if (cur && cur.id === it.id) {
+            cur.audio.playbackRate = s;
+            if (cur.fxNodes && cur.fxNodes.setRate) cur.fxNodes.setRate(s);
+          }
           renderList();
         }));
       });
@@ -828,7 +862,7 @@ function renderList() {
       FX_TYPES.forEach(function (fp) {
         rFx.appendChild(chip(fp[1], (it.fx || 'none') === fp[0], function () {
           it.fx = fp[0]; if (!it.fxLv) it.fxLv = 2; DB.put(it);
-          if (cur && cur.id === it.id) setCurStatus('音效下次播放生效');
+          if (cur && cur.id === it.id && cur.fxNodes) cur.fxNodes.setFx(fp[0], it.fxLv, it.speed || 1);
           renderList();
         }));
       });
@@ -839,7 +873,7 @@ function renderList() {
         FX_LEVELS.forEach(function (lv) {
           rFxLv.appendChild(chip(lv[1], (it.fxLv || 2) === lv[0], function () {
             it.fxLv = lv[0]; DB.put(it);
-            if (cur && cur.id === it.id) setCurStatus('强度下次播放生效');
+            if (cur && cur.id === it.id && cur.fxNodes) cur.fxNodes.setFx(it.fx || 'none', lv[0], it.speed || 1);
             renderList();
           }));
         });
@@ -857,7 +891,9 @@ function renderList() {
         var a = document.createElement('a');
         var ext = (it.blob.type.indexOf('mp4') >= 0) ? 'm4a' : (it.blob.type.indexOf('ogg') >= 0 ? 'ogg' : 'webm');
         a.href = URL.createObjectURL(it.blob);
-        a.download = it.name + '.' + ext;
+        /* 导出文件名净化：界面里的 10/5 22:55 含 Windows 非法字符(/、:等)，统一替换为 -，手机和电脑都能正常保存 */
+        var safeName = (it.name || '录音').replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').replace(/[ .-]+$/, '') || '录音';
+        a.download = safeName + '.' + ext;
         a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
       };
