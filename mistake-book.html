@@ -99,6 +99,12 @@
   #origMask img { width: 100%; height: auto; display: block; }
   #origMask .closeTip { position: fixed; top: 12px; right: 12px; background: rgba(255,255,255,.15); color: #fff; border-radius: 999px; padding: 8px 14px; font-size: 14px; z-index: 51; }
   .author { max-width: 720px; margin: 0 auto; text-align: center; font-size: 12px; color: #9ca3af; padding: 22px 14px 10px; line-height: 1.7; }
+  #devNotice { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 80; display: flex; align-items: center; justify-content: center; padding: 30px; }
+  #devNotice.hidden { display: none; }
+  #devNotice .box { background: #fff; border-radius: 16px; padding: 28px 22px; text-align: center; max-width: 320px; }
+  #devNotice .box .em { font-size: 34px; }
+  #devNotice .box .txt { font-size: 16px; font-weight: bold; margin-top: 10px; }
+  #devNotice .box .sub { font-size: 13px; color: #9ca3af; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -232,6 +238,14 @@
 </div>
 
 <div class="author">张亮数理化·无锡海岸城<br>微信：177 5152 8868</div>
+
+<div id="devNotice">
+  <div class="box">
+    <div class="em">🚧</div>
+    <div class="txt">本工具尚未开发完成，敬请期待</div>
+    <div class="sub">提示将在 3 秒后自动关闭</div>
+  </div>
+</div>
 
 <div id="toast"></div>
 <div id="origMask" class="hidden">
@@ -1545,6 +1559,8 @@ $('tbDel').onclick = function () {
 
 /* ---------- 启动 ---------- */
 refresh();
+setTimeout(function () { $('devNotice').classList.add('hidden'); }, 3000);
+$('devNotice').addEventListener('click', function () { this.classList.add('hidden'); });
 })();
 </script>
 <script src="pwa-register.js"></script>
