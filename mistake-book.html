@@ -7,7 +7,9 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f3f4f6; color: #1f2937; }
-  header { background: #2563eb; color: #fff; padding: 14px 16px; font-size: 18px; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+  header { background: #2563eb; color: #fff; padding: 12px 14px; font-size: 18px; font-weight: bold; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; }
+  #mbBack { background: rgba(255,255,255,.15); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; padding: 0; margin-right: 10px; flex: none; }
+  #mbBack svg { width: 22px; height: 22px; }
   .view { padding: 14px; max-width: 720px; margin: 0 auto; }
   .hidden { display: none !important; }
   .big-btns { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
@@ -96,10 +98,16 @@
   #origMask .wrap { min-height: 100%; display: flex; align-items: center; justify-content: center; }
   #origMask img { width: 100%; height: auto; display: block; }
   #origMask .closeTip { position: fixed; top: 12px; right: 12px; background: rgba(255,255,255,.15); color: #fff; border-radius: 999px; padding: 8px 14px; font-size: 14px; z-index: 51; }
+  .author { max-width: 720px; margin: 0 auto; text-align: center; font-size: 12px; color: #9ca3af; padding: 22px 14px 10px; line-height: 1.7; }
 </style>
 </head>
 <body>
-<header>📘 错题订正工具</header>
+<header>
+  <button id="mbBack" aria-label="返回">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.4 5.6a1 1 0 0 1 0 1.4L10.4 12l5 5a1 1 0 0 1-1.4 1.4l-5.7-5.7a1 1 0 0 1 0-1.4l5.7-5.7a1 1 0 0 1 1.4 0z"/></svg>
+  </button>
+  <span>📘 错题订正工具</span>
+</header>
 
 <!-- 学科选择页（入口） -->
 <div id="subjectView" class="view">
@@ -222,6 +230,8 @@
   <div class="sect">复习记录</div>
   <div id="rvHistory"></div>
 </div>
+
+<div class="author">张亮数理化·无锡海岸城<br>微信：177 5152 8868</div>
 
 <div id="toast"></div>
 <div id="origMask" class="hidden">
@@ -754,6 +764,27 @@ function refresh() {
 $('btnSubBack').onclick = function () {
   curSubject = null; curFolder = null;
   show('subjectView'); renderSubjects();
+};
+
+/* 顶部返回：应用内逐级回退，到学科选择页才退出工具 */
+$('mbBack').onclick = function () {
+  var views = ['correctView', 'editView', 'reviewView', 'homeView', 'subjectView'];
+  var vis = null;
+  views.forEach(function (id) { if (!$(id).classList.contains('hidden')) vis = id; });
+  if (vis === 'reviewView') { show('homeView'); renderHome(); }
+  else if (vis === 'editView') {
+    if (editFrom === 'review' && editingId) { show('reviewView'); renderReview(); }
+    else { show('homeView'); renderHome(); }
+  }
+  else if (vis === 'correctView') { show('homeView'); renderHome(); }
+  else if (vis === 'homeView') {
+    if (curFolder) { curFolder = null; filterMonth = 'all'; renderHome(); }
+    else { curSubject = null; curFolder = null; show('subjectView'); renderSubjects(); }
+  }
+  else {
+    if (document.referrer && document.referrer.indexOf(location.origin) === 0) history.back();
+    else location.href = 'index.html';
+  }
 };
 
 /* ---------- 纠偏（四点透视变换） ---------- */
@@ -1516,5 +1547,6 @@ $('tbDel').onclick = function () {
 refresh();
 })();
 </script>
+<script src="pwa-register.js"></script>
 </body>
 </html>

@@ -8,7 +8,11 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html { font-size: 15px; }
   body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f3f4f6; color: #1f2937; }
-  header { background: #059669; color: #fff; padding: 12px 14px; font-size: 17px; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+  header { background: #059669; color: #fff; padding: 12px 14px; font-size: 17px; font-weight: bold; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; }
+  header #settingsBtn { margin-left: auto; background: rgba(255,255,255,.15); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; padding: 0; }
+  header #settingsBtn svg { width: 20px; height: 20px; }
+  header #backBtn { background: rgba(255,255,255,.15); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; padding: 0; margin-right: 10px; flex: none; }
+  header #backBtn svg { width: 22px; height: 22px; }
   .wrap { padding: 12px; max-width: 720px; margin: 0 auto; }
   button { font-family: inherit; cursor: pointer; border: 1px solid #d1d5db; background: #fff; border-radius: 10px; padding: 8px 12px; font-size: 14px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
   button:hover { background: #dbeafe; }
@@ -34,10 +38,11 @@
   .stopBtn svg { width: 18px; height: 18px; }
   .rec-name { font-size: 14px; font-weight: bold; word-break: break-all; }
   .rec-meta { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-  .rec-status { font-size: 11px; color: #059669; flex: none; margin-left: 2px; }
   .rec-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 7px 0 0 52px; }
   .rec-tags .t { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
   .rec-note { font-size: 12px; color: #4b5563; margin: 5px 0 0 52px; word-break: break-all; }
+  .rec-stat-line { font-size: 11px; color: #059669; margin: 5px 0 0 52px; min-height: 0; }
+  .rec-stat-line:empty { margin-top: 0; }
   .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
   .opts .lbl { font-size: 12px; color: #6b7280; flex: none; }
   .optsRow { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 4px; }
@@ -85,6 +90,8 @@
   /* 保存对话框 */
   #saveMask { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
   #saveMask.hidden { display: none; }
+  #settingsMask { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #settingsMask.hidden { display: none; }
   .saveBox { background: #fff; border-radius: 14px; padding: 16px; width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; }
   .saveBox .sect2 { font-weight: bold; font-size: 14px; margin: 12px 0 6px; }
   #saveName { width: 100%; padding: 10px; font-size: 15px; border: 1px solid #d1d5db; border-radius: 10px; font-family: inherit; }
@@ -92,10 +99,26 @@
   .tagRow { display: flex; flex-wrap: wrap; gap: 6px; }
   .saveBtns { display: flex; gap: 8px; margin-top: 14px; }
   .saveBtns button { flex: 1; padding: 10px; font-size: 14px; }
+  /* 设置面板：标签库管理 */
+  .tagManageRow { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 10px; margin-top: 8px; }
+  .tagManageRow .tname { flex: 1; font-size: 14px; word-break: break-all; }
+  .tagManageRow button { font-size: 12px; padding: 5px 10px; }
+  .addTagRow { display: flex; gap: 8px; margin-top: 10px; }
+  .addTagRow input { flex: 1; padding: 9px 10px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 10px; font-family: inherit; }
+  .hintLine { font-size: 12px; color: #9ca3af; margin-top: 10px; line-height: 1.6; }
+  .author { text-align: center; font-size: 12px; color: #9ca3af; padding: 22px 14px 10px; line-height: 1.7; }
 </style>
 </head>
 <body>
-<header>🎙 复读机</header>
+<header>
+  <button id="backBtn" aria-label="返回">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.4 5.6a1 1 0 0 1 0 1.4L10.4 12l5 5a1 1 0 0 1-1.4 1.4l-5.7-5.7a1 1 0 0 1 0-1.4l5.7-5.7a1 1 0 0 1 1.4 0z"/></svg>
+  </button>
+  <span>🎙 复读机</span>
+  <button id="settingsBtn" aria-label="设置">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 .1-1 7.5 7.5 0 0 0-.1-1l2-1.6a.5.5 0 0 0 .1-.6l-1.9-3.3a.5.5 0 0 0-.6-.2l-2.4 1a7.6 7.6 0 0 0-1.7-1l-.4-2.5a.5.5 0 0 0-.5-.4h-3.8a.5.5 0 0 0-.5.4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.4-1a.5.5 0 0 0-.6.2L2.6 8.8a.5.5 0 0 0 .1.6l2 1.6a7.5 7.5 0 0 0 0 2l-2 1.6a.5.5 0 0 0-.1.6l1.9 3.3c.1.2.4.3.6.2l2.4-1c.5.4 1.1.7 1.7 1l.4 2.5c0 .2.3.4.5.4h3.8c.2 0 .5-.2.5-.4l.4-2.5a7.6 7.6 0 0 0 1.7-1l2.4 1c.2.1.5 0 .6-.2l1.9-3.3a.5.5 0 0 0-.1-.6l-2-1.6zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+  </button>
+</header>
 
 <div class="wrap">
   <div id="recCard">
@@ -108,6 +131,7 @@
 
   <div class="sect">我的录音</div>
   <div id="list"></div>
+  <div class="author">张亮数理化·无锡海岸城<br>微信：177 5152 8868</div>
 </div>
 
 <!-- 掐头去尾面板 -->
@@ -143,10 +167,11 @@
   </div>
 </div>
 
-<!-- 保存录音对话框（命名 + 标签 + 备注） -->
+<!-- 保存录音对话框（命名 + 标签 + 备注，新建/编辑共用） -->
 <div id="saveMask" class="hidden">
   <div class="saveBox">
-    <div class="trimName">💾 保存录音</div>
+    <div class="trimName" id="dlgTitle">💾 保存录音</div>
+    <div class="sect2">名称</div>
     <input id="saveName" placeholder="录音名称">
     <div class="sect2">🏷 标签（点选，可多选）</div>
     <div class="tagRow" id="tagChips"></div>
@@ -159,6 +184,23 @@
   </div>
 </div>
 
+<!-- 设置面板：常用标签管理 -->
+<div id="settingsMask" class="hidden">
+  <div class="saveBox">
+    <div class="trimName">⚙ 设置</div>
+    <div class="sect2">🏷 常用标签管理</div>
+    <div class="hintLine">这些标签会出现在保存录音时的标签点选区，日期和星期标签会自动生成，无需添加。</div>
+    <div id="tagManageList"></div>
+    <div class="addTagRow">
+      <input id="newTagInput" placeholder="输入新标签，如：历史、地理、文言文">
+      <button id="addTagBtn" style="background:#059669;color:#fff;border-color:#059669">添加</button>
+    </div>
+    <div class="saveBtns">
+      <button id="settingsClose" style="background:#059669;color:#fff;border-color:#059669">完成</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
 'use strict';
@@ -167,6 +209,8 @@ var $ = function (id) { return document.getElementById(id); };
 var SPEEDS = [0.5, 0.75, 1, 1.5, 2, 3];
 var REPEATS = [[1, '1遍'], [3, '3遍'], [5, '5遍'], [0, '循环']];
 var GAPS = [[0, '不停顿'], [1, '停1秒'], [2, '停2秒'], [3, '停3秒']];
+var FX_TYPES = [['none', '原声'], ['echo', '回声'], ['reverb', '混响']];
+var FX_LEVELS = [[1, '弱'], [2, '中'], [3, '强']];
 
 /* 专业线性图标（currentColor 随按钮颜色） */
 var ICON = {
@@ -343,16 +387,48 @@ function resetRecUI() {
   $('recTime').textContent = '00:00';
 }
 
-/* ---------- 保存对话框（命名 + 标签 + 备注） ---------- */
-var pendingSave = null;
-var selTags = {};
+/* ---------- 常用标签库（localStorage 持久化，设置页管理） ---------- */
+var TAG_LIB_KEY = 'fuduji_taglib_v1';
+var DEFAULT_TAGS = ['语文', '英语', '历史', '道法', '古诗词', '散文', '作文', '朗诵', '名言名句', '单词', '口语', '课文', '速记', '预习', '复习', '错题', '其他'];
 
-function autoTags() {
+function getTagLib() {
+  try {
+    var v = JSON.parse(localStorage.getItem(TAG_LIB_KEY) || 'null');
+    if (v && v.length) return v;
+  } catch (e) {}
+  return DEFAULT_TAGS.slice();
+}
+function saveTagLib(list) {
+  localStorage.setItem(TAG_LIB_KEY, JSON.stringify(list));
+}
+/* 首次/升级时同步默认标签：按默认顺序重排，追加新项、移除已替换的旧项（用户自定义项保留在末尾） */
+(function migrateTagLib() {
+  var FLAG = 'fuduji_taglib_seed_v5';
+  if (localStorage.getItem(FLAG)) return;
+  var list = getTagLib();
+  /* 旧版程序默认、新版已改名移除的标签 */
+  ['语文课文', '古诗'].forEach(function (old) {
+    var i = list.indexOf(old);
+    if (i >= 0) list.splice(i, 1);
+  });
+  var ordered = [];
+  DEFAULT_TAGS.forEach(function (t) { if (list.indexOf(t) >= 0) ordered.push(t); });
+  list.forEach(function (t) { if (ordered.indexOf(t) < 0) ordered.push(t); });
+  DEFAULT_TAGS.forEach(function (t) { if (ordered.indexOf(t) < 0) ordered.push(t); });
+  saveTagLib(ordered);
+  localStorage.setItem(FLAG, '1');
+})();
+function isDateTag(t) { return /^\d{4}年\d{1,2}月\d{1,2}日$/.test(t) || /^\d{4}年\d{1,2}月$/.test(t) || /^星期.$/.test(t); }
+function todayDateTags() {
   var d = new Date();
   return [d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日',
-          '星期' + '日一二三四五六'.charAt(d.getDay()),
-          '语文课文', '英语', '单词', '古诗', '散文'];
+          d.getFullYear() + '年' + (d.getMonth() + 1) + '月',
+          '星期' + '日一二三四五六'.charAt(d.getDay())];
 }
+
+/* ---------- 对话框（新建录音 / 编辑录音共用） ---------- */
+var dlgCtx = null;   // {mode:'new',blob,dur} 或 {mode:'edit',item}
+var selTags = {};
 
 function defaultRecName() {
   var d = new Date();
@@ -360,49 +436,189 @@ function defaultRecName() {
          ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
 }
 
-function openSaveDialog(blob, dur) {
-  pendingSave = { blob: blob, dur: dur };
+function fillTagChips(initialTags) {
   selTags = {};
-  $('saveName').value = defaultRecName();
-  $('saveNote').value = '';
+  (initialTags || []).forEach(function (t) { selTags[t] = true; });
+  /* 顺序：今天日期标签（含已选的旧日期标签）→ 标签库（按设置中的顺序）→ 已选但不在库中的标签 */
+  var dateCands = [], contentCands = [];
+  function pushUnique(arr, t) { if (t && arr.indexOf(t) < 0) arr.push(t); }
+  todayDateTags().forEach(function (t) { pushUnique(dateCands, t); });
+  (initialTags || []).forEach(function (t) { if (isDateTag(t)) pushUnique(dateCands, t); });
+  getTagLib().forEach(function (t) { pushUnique(contentCands, t); });
+  (initialTags || []).forEach(function (t) { if (!isDateTag(t)) pushUnique(contentCands, t); });
+
   var box = $('tagChips'); box.innerHTML = '';
-  autoTags().forEach(function (t) {
-    box.appendChild(chip(t, false, function () {
+  dateCands.concat(contentCands).forEach(function (t) {
+    box.appendChild(chip(t, !!selTags[t], function () {
       selTags[t] = !selTags[t];
       this.classList.toggle('on', !!selTags[t]);
     }));
   });
+}
+
+function openSaveDialog(blob, dur) {
+  dlgCtx = { mode: 'new', blob: blob, dur: dur };
+  $('dlgTitle').textContent = '💾 保存录音';
+  $('saveName').value = defaultRecName();
+  $('saveNote').value = '';
+  fillTagChips([]);
+  $('saveCancel').textContent = '丢弃';
+  $('saveMask').classList.remove('hidden');
+}
+
+function openEditDialog(item) {
+  dlgCtx = { mode: 'edit', item: item };
+  $('dlgTitle').textContent = '✏ 编辑录音';
+  $('saveName').value = item.name || '';
+  $('saveNote').value = item.note || '';
+  fillTagChips(item.tags || []);
+  $('saveCancel').textContent = '取消';
   $('saveMask').classList.remove('hidden');
 }
 
 $('saveOk').onclick = function () {
-  if (!pendingSave) return;
+  if (!dlgCtx) return;
   var name = $('saveName').value.trim() || defaultRecName();
-  var tags = autoTags().filter(function (t) { return selTags[t]; });
+  var tags = Object.keys(selTags).filter(function (t) { return selTags[t]; });
   var note = $('saveNote').value.trim();
-  var p = pendingSave; pendingSave = null;
+  var ctx = dlgCtx; dlgCtx = null;
   $('saveMask').classList.add('hidden');
-  DB.put({ name: name, tags: tags, note: note, blob: p.blob, duration: p.dur, createdAt: Date.now(), speed: 1, repeat: 3, gap: 1 })
-    .then(function () { resetRecUI(); renderList(); });
+  if (ctx.mode === 'new') {
+    DB.put({ name: name, tags: tags, note: note, blob: ctx.blob, duration: ctx.dur,
+             createdAt: Date.now(), speed: 1, repeat: 3, gap: 1, fx: 'none', fxLv: 2 })
+      .then(function () { resetRecUI(); renderList(); });
+  } else {
+    var it = ctx.item;
+    it.name = name; it.tags = tags; it.note = note;
+    DB.put(it).then(renderList);
+  }
 };
 $('saveCancel').onclick = function () {
-  if (!pendingSave) return;
-  if (!confirm('丢弃这段录音？')) return;
-  pendingSave = null;
+  if (!dlgCtx) return;
+  if (dlgCtx.mode === 'new') {
+    if (!confirm('丢弃这段录音？')) return;
+    resetRecUI();
+  }
+  dlgCtx = null;
   $('saveMask').classList.add('hidden');
-  resetRecUI();
 };
+
+/* ---------- 设置：标签库增改删 ---------- */
+function renderTagManage() {
+  var box = $('tagManageList'); box.innerHTML = '';
+  getTagLib().forEach(function (t, i) {
+    var row = document.createElement('div'); row.className = 'tagManageRow';
+    var nm = document.createElement('div'); nm.className = 'tname'; nm.textContent = t;
+    var rn = document.createElement('button'); rn.textContent = '改名';
+    rn.onclick = function () {
+      var v = prompt('修改标签名称', t);
+      if (!v || !v.trim() || v.trim() === t) return;
+      var list = getTagLib(); list[i] = v.trim(); saveTagLib(list); renderTagManage();
+    };
+    var del = document.createElement('button'); del.className = 'danger'; del.textContent = '删除';
+    del.onclick = function () {
+      if (!confirm('删除标签「' + t + '」？\n（已有录音上的该标签不会被删除）')) return;
+      var list = getTagLib(); list.splice(i, 1); saveTagLib(list); renderTagManage();
+    };
+    row.appendChild(nm); row.appendChild(rn); row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+$('addTagBtn').onclick = function () {
+  var inp = $('newTagInput');
+  var v = inp.value.trim();
+  if (!v) return;
+  if (isDateTag(v)) { alert('日期和星期标签会自动生成，不用手动添加'); return; }
+  var list = getTagLib();
+  if (list.indexOf(v) >= 0) { alert('这个标签已经存在'); return; }
+  list.push(v); saveTagLib(list); inp.value = ''; renderTagManage();
+};
+$('newTagInput').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { e.preventDefault(); $('addTagBtn').click(); }
+});
+$('settingsBtn').onclick = function () { renderTagManage(); $('settingsMask').classList.remove('hidden'); };
+$('settingsClose').onclick = function () { $('settingsMask').classList.add('hidden'); };
+$('settingsMask').addEventListener('click', function (e) {
+  if (e.target === $('settingsMask')) $('settingsMask').classList.add('hidden');
+});
+
+/* ---------- 返回上一页 ---------- */
+function goBack() {
+  if (document.referrer && document.referrer.indexOf(location.origin) === 0) history.back();
+  else location.href = 'index.html';
+}
+$('backBtn').onclick = goBack;
 
 $('recBtn').onclick = function () { if (recording) stopRec(); else startRec(); };
 
 /* ---------- 播放（带复读次数与停顿） ---------- */
-var cur = null; // {id, audio, url, timer}
+var cur = null; // {id, audio, url, timer, fxNodes}
 var repeatLeft = 0;
+
+/* ---------- 音效：回声 / 混响（Web Audio API） ---------- */
+var audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+/* 生成混响用的脉冲响应：衰减白噪声，模拟大厅反射 */
+function makeImpulse(ctx, seconds, decay) {
+  var rate = ctx.sampleRate, len = Math.floor(rate * seconds);
+  var buf = ctx.createBuffer(2, len, rate);
+  for (var ch = 0; ch < 2; ch++) {
+    var data = buf.getChannelData(ch);
+    for (var i = 0; i < len; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  return buf;
+}
+
+/* 给正在播放的 audio 元素挂上效果链；返回清理函数，不支持时返回 null（走原声） */
+function buildFxGraph(item, audio) {
+  var fx = item.fx || 'none';
+  if (fx === 'none') return null;
+  var ctx = getAudioCtx();
+  if (!ctx) return null;
+  var nodes = [];
+  try {
+    var src = ctx.createMediaElementSource(audio); nodes.push(src);
+    var master = ctx.createGain(); master.connect(ctx.destination); nodes.push(master);
+    src.connect(master); /* 干声始终保留 */
+    var lv = item.fxLv || 2, wet, delay, fb, conv;
+    if (fx === 'echo') {
+      var delayTime = [0.22, 0.3, 0.42][lv - 1];
+      var fbv = [0.2, 0.38, 0.55][lv - 1];
+      var wetV = [0.25, 0.4, 0.55][lv - 1];
+      delay = ctx.createDelay(2); delay.delayTime.value = delayTime; nodes.push(delay);
+      fb = ctx.createGain(); fb.gain.value = fbv; nodes.push(fb);
+      wet = ctx.createGain(); wet.gain.value = wetV; nodes.push(wet);
+      src.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(master);
+    } else {
+      var secs = [1.0, 2.0, 3.2][lv - 1];
+      var decay = [2, 2.8, 3.6][lv - 1];
+      var wetV2 = [0.25, 0.4, 0.55][lv - 1];
+      conv = ctx.createConvolver(); conv.buffer = makeImpulse(ctx, secs, decay); nodes.push(conv);
+      wet = ctx.createGain(); wet.gain.value = wetV2; nodes.push(wet);
+      src.connect(conv); conv.connect(wet); wet.connect(master);
+    }
+    return { disconnect: function () { nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} }); } };
+  } catch (e) {
+    return null;
+  }
+}
 
 function stopCur() {
   if (!cur) return;
   clearTimeout(cur.timer);
   cur.audio.pause();
+  if (cur.fxNodes) cur.fxNodes.disconnect();
   URL.revokeObjectURL(cur.url);
   cur = null;
   resetPlayingUI();
@@ -414,13 +630,19 @@ function resetPlayingUI() {
     var btn = el.querySelector('.playBtn');
     btn.classList.remove('playing');
     btn.innerHTML = ICON.play;
-    el.querySelector('.rec-status').textContent = '';
+    el.querySelector('.rec-stat-line').textContent = '';
   });
 }
 
 function findRec(id) {
   for (var i = 0; i < recs.length; i++) if (recs[i].id === id) return recs[i];
   return null;
+}
+
+function setCurStatus(text) {
+  if (!cur) return;
+  var el = document.querySelector('.rec[data-id="' + cur.id + '"] .rec-stat-line');
+  if (el) el.textContent = text;
 }
 
 function trimStartOf(it) { return it.trimStart || 0; }
@@ -432,8 +654,19 @@ function segDur(it) {
 
 function togglePlay(item) {
   if (cur && cur.id === item.id) {
-    if (cur.audio.paused) { cur.audio.play(); updatePlayBtns(item.id, true); }
-    else { cur.audio.pause(); updatePlayBtns(item.id, false); }
+    if (cur.audio.paused) {
+      clearTimeout(cur.timer);
+      if (cur.inGap) cur.audio.currentTime = trimStartOf(item);
+      cur.audio.play();
+      cur.inGap = false;
+      updatePlayBtns(item.id, true);
+      setCurStatus(item.repeat === 0 ? '循环播放中…' : '还剩 ' + repeatLeft + ' 遍');
+    } else {
+      cur.audio.pause();
+      updatePlayBtns(item.id, false);
+      clearTimeout(cur.timer);
+      setCurStatus('已暂停');
+    }
     return;
   }
   stopCur();
@@ -443,15 +676,26 @@ function togglePlay(item) {
   var t0 = trimStartOf(item);
   var t1 = trimEndOf(item);
   repeatLeft = item.repeat === 0 ? Infinity : (item.repeat || 1);
-  cur = { id: item.id, audio: audio, url: url, timer: 0 };
+  var fxNodes = buildFxGraph(item, audio);
+  cur = { id: item.id, audio: audio, url: url, timer: 0, fxNodes: fxNodes, inGap: false };
+  setCurStatus(item.repeat === 0 ? '循环播放中…' : '还剩 ' + repeatLeft + ' 遍');
 
   function segEnded() {
     if (!cur || cur.audio !== audio) return;
     audio.pause();
     if (repeatLeft === Infinity || repeatLeft > 1) {
-      if (repeatLeft !== Infinity) repeatLeft--;
+      cur.inGap = true;
+      if (repeatLeft !== Infinity) {
+        repeatLeft--;
+        setCurStatus((item.gap ? '跟读停顿… ' : '') + '还剩 ' + repeatLeft + ' 遍');
+      }
       cur.timer = setTimeout(function () {
-        if (cur && cur.audio === audio) { audio.currentTime = t0; audio.play(); }
+        if (cur && cur.audio === audio) {
+          audio.currentTime = t0;
+          cur.inGap = false;
+          audio.play();
+          if (repeatLeft !== Infinity) setCurStatus('还剩 ' + repeatLeft + ' 遍');
+        }
       }, (item.gap || 0) * 1000);
     } else {
       stopCur();
@@ -483,11 +727,6 @@ function updatePlayBtns(id, playing) {
     btn.classList.toggle('playing', playing);
     btn.innerHTML = playing ? ICON.pause : ICON.play;
   });
-}
-
-function statusText(item) {
-  if (item.repeat === 0) return '循环播放中…';
-  return '还剩 ' + repeatLeft + ' / ' + item.repeat + ' 遍';
 }
 
 /* ---------- 列表 ---------- */
@@ -525,11 +764,10 @@ function renderList() {
       var meta = document.createElement('div'); meta.className = 'rec-meta';
       var trimmed = (it.trimStart && it.trimStart > 0.05) || (it.trimEnd && it.trimEnd < it.duration - 0.05);
       meta.textContent = (trimmed ? '✂片段 ' + fmt(segDur(it)) + ' / 原' + fmt(it.duration) : fmt(it.duration)) +
-        ' · ' + new Date(it.createdAt).toLocaleDateString();
+        ' · ' + new Date(it.createdAt).toLocaleDateString() +
+        ((it.fx && it.fx !== 'none') ? ' · ' + (it.fx === 'echo' ? '回声·' : '混响·') + (['','弱','中','强'][it.fxLv || 2] || '') : '');
       mid.appendChild(nm); mid.appendChild(meta);
       head.appendChild(mid);
-      var st = document.createElement('div'); st.className = 'rec-status';
-      head.appendChild(st);
       var tg = document.createElement('button'); tg.className = 'rec-toggle';
       tg.textContent = expanded ? '收起' : '设置';
       tg.onclick = function () { expandState[it.id] = !expanded; renderList(); };
@@ -550,6 +788,9 @@ function renderList() {
         var note = document.createElement('div'); note.className = 'rec-note'; note.textContent = '📝 ' + it.note;
         card.appendChild(note);
       }
+      /* 播放状态行（独立一行，不挤压文件名和按钮） */
+      var statLine = document.createElement('div'); statLine.className = 'rec-stat-line';
+      card.appendChild(statLine);
 
       var body = document.createElement('div');
       body.className = 'rec-body' + (expanded ? '' : ' collapsed');
@@ -581,16 +822,35 @@ function renderList() {
         }));
       });
       opts.appendChild(rGap);
+      var rFx = document.createElement('div'); rFx.className = 'optsRow';
+      var l4 = document.createElement('span'); l4.className = 'lbl'; l4.textContent = '音效'; rFx.appendChild(l4);
+      FX_TYPES.forEach(function (fp) {
+        rFx.appendChild(chip(fp[1], (it.fx || 'none') === fp[0], function () {
+          it.fx = fp[0]; if (!it.fxLv) it.fxLv = 2; DB.put(it);
+          if (cur && cur.id === it.id) setCurStatus('音效下次播放生效');
+          renderList();
+        }));
+      });
+      opts.appendChild(rFx);
+      if ((it.fx || 'none') !== 'none') {
+        var rFxLv = document.createElement('div'); rFxLv.className = 'optsRow';
+        var l5 = document.createElement('span'); l5.className = 'lbl'; l5.textContent = '强度'; rFxLv.appendChild(l5);
+        FX_LEVELS.forEach(function (lv) {
+          rFxLv.appendChild(chip(lv[1], (it.fxLv || 2) === lv[0], function () {
+            it.fxLv = lv[0]; DB.put(it);
+            if (cur && cur.id === it.id) setCurStatus('强度下次播放生效');
+            renderList();
+          }));
+        });
+        opts.appendChild(rFxLv);
+      }
       body.appendChild(opts);
 
       var row2 = document.createElement('div'); row2.className = 'row2';
       var trimBtn = document.createElement('button'); trimBtn.textContent = '✂ 裁剪';
       trimBtn.onclick = function () { openTrim(it); };
-      var rn = document.createElement('button'); rn.textContent = '✏ 改名';
-      rn.onclick = function () {
-        var v = prompt('输入新名字', it.name);
-        if (v && v.trim()) { it.name = v.trim(); DB.put(it).then(renderList); }
-      };
+      var rn = document.createElement('button'); rn.textContent = '✏ 编辑';
+      rn.onclick = function () { openEditDialog(it); };
       var dl = document.createElement('button'); dl.textContent = '⬇ 导出';
       dl.onclick = function () {
         var a = document.createElement('a');
@@ -615,7 +875,7 @@ function renderList() {
     if (cur) {
       updatePlayBtns(cur.id, !cur.audio.paused);
       var ci = findRec(cur.id);
-      var cardEl = document.querySelector('.rec[data-id="' + cur.id + '"] .rec-status');
+      var cardEl = document.querySelector('.rec[data-id="' + cur.id + '"] .rec-stat-line');
       if (ci && cardEl) cardEl.textContent = ci.repeat === 0 ? '循环中' : ('还剩 ' + repeatLeft + ' 遍');
     }
   });
@@ -778,5 +1038,6 @@ $('trimSave').onclick = function () {
 renderList();
 })();
 </script>
+<script src="pwa-register.js"></script>
 </body>
 </html>
